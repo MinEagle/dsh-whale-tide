@@ -1,153 +1,48 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  BOOLEAN_KEYS,
-  DEFAULTS,
-  GROUPS,
-  HINTS,
-  LABELS,
-  OPTIONS,
-  RANGES,
-  migrate,
-  normalize,
-  resetDefaults,
-  storageKey,
-  validatePatch,
-} from "../lib/settings.js";
+import { BOOLEAN_KEYS, DEFAULTS, GROUPS, HINTS, LABELS, RANGES, normalize, resetDefaults, storageKey } from "../lib/settings.js";
 
-test("storage key is versioned and namespaced", () => {
-  assert.equal(storageKey, "dsh-whale-tide:v1");
-});
-
-test("defaults cover every grouped control and nothing else", () => {
-  const grouped = GROUPS.flatMap((group) => group.keys).sort();
+test("storage key", () => assert.equal(storageKey, "dsh-whale-tide:v1"));
+test("defaults cover grouped controls", () => {
+  const grouped = GROUPS.flatMap((g) => g.keys).sort();
   assert.deepEqual(Object.keys(DEFAULTS).sort(), grouped);
-  assert.equal(new Set(grouped).size, grouped.length, "no control appears twice");
+  assert.equal(new Set(grouped).size, grouped.length);
 });
-
-test("upstream-compatible defaults match dsh-ascii-whales 0.1.5", () => {
-  assert.equal(DEFAULTS.count, 3);
-  assert.equal(DEFAULTS.species, "humpback");
-  assert.equal(DEFAULTS.size, 1.2);
-  assert.equal(DEFAULTS.speed, 0.65);
-  assert.equal(DEFAULTS.fishCount, 170);
-  assert.equal(DEFAULTS.gridScale, 1);
-  assert.equal(DEFAULTS.gridOpacity, 0.05);
-  assert.equal(DEFAULTS.glass, true);
-  assert.equal(DEFAULTS.blur, 14);
-  assert.equal(DEFAULTS.glassOpacity, 0.45);
-  assert.equal(DEFAULTS.color, "#4d6bfe");
+test("defaults match the dsh-quiet template", () => {
+  assert.equal(DEFAULTS.enabled, true);
+  assert.equal(DEFAULTS.opacity, 1);
+  assert.equal(DEFAULTS.conversationOpacity, 1);
+  assert.equal(DEFAULTS.speed, 1);
+  assert.equal(DEFAULTS.fishDensity, 1);
+  assert.equal(DEFAULTS.whaleCount, 3);
+  assert.equal(DEFAULTS.sidebarBlur, 6);
+  assert.equal(DEFAULTS.composerGlass, true);
+  assert.equal(DEFAULTS.streamBlur, 10);
 });
-
-test("tide defaults stay as shipped", () => {
-  assert.equal(DEFAULTS.conversationOpacity, 0.16);
-  assert.equal(DEFAULTS.conversationDensity, 0.3);
-  assert.equal(DEFAULTS.followTheme, true);
+test("normalize clamps and fills", () => {
+  const n = normalize({ speed: 9, fishDensity: 0, whaleCount: 9, sidebarBlur: -1, streamBlur: 99, opacity: 2 });
+  assert.equal(n.speed, 2);
+  assert.equal(n.fishDensity, 0.2);
+  assert.equal(n.whaleCount, 3);
+  assert.equal(n.sidebarBlur, 0);
+  assert.equal(n.streamBlur, 20);
+  assert.equal(n.opacity, 1);
+  assert.equal(n.composerGlass, true);
 });
-
-test("migrate raises only known old defaults to 0.20", () => {
-  assert.equal(migrate({ conversationOpacity: 0.16 }).conversationOpacity, 0.20);
-  assert.equal(migrate({ conversationOpacity: 0.10 }).conversationOpacity, 0.20);
-  assert.equal(migrate({ conversationOpacity: 0.22 }).conversationOpacity, 0.22);
-  assert.equal(migrate({ conversationOpacity: 0.10 }, false).conversationOpacity, 0.10);
-  assert.equal(migrate(null), null);
+test("normalize rejects malformed input", () => {
+  const n = normalize({ speed: "x", enabled: "yes", whaleCount: null });
+  assert.equal(n.speed, 1);
+  assert.equal(n.enabled, true);
+  assert.equal(n.whaleCount, 3);
 });
-
-test("normalize fills missing values and drops unknown fields", () => {
-  const result = normalize({ density: 0.5, extra: "ignored" });
-  assert.equal(result.density, 0.5);
-  assert.equal(result.speed, DEFAULTS.speed);
-  assert.equal(Object.hasOwn(result, "extra"), false);
+test("resetDefaults returns a fresh copy", () => {
+  const a = resetDefaults(); const b = resetDefaults();
+  assert.deepEqual(a, DEFAULTS); assert.notEqual(a, b); a.speed = 2; assert.equal(b.speed, 1);
 });
-
-test("normalize clamps every numeric control to its range", () => {
-  const result = normalize({
-    density: 9,
-    speed: 99,
-    opacity: -1,
-    conversationOpacity: 1,
-    conversationDensity: 7,
-    count: 999,
-    size: 0,
-    wake: -4,
-    fishCount: 5000,
-    blur: 500,
-    glassOpacity: 3,
-  });
-  assert.equal(result.density, 1);
-  assert.equal(result.speed, 10);
-  assert.equal(result.opacity, 0);
-  assert.equal(result.conversationOpacity, 0.5);
-  assert.equal(result.conversationDensity, 1);
-  assert.equal(result.count, 20);
-  assert.equal(result.size, 0.1);
-  assert.equal(result.wake, 0);
-  assert.equal(result.fishCount, 1000);
-  assert.equal(result.blur, 64);
-  assert.equal(result.glassOpacity, 1);
+test("every control has label and hint", () => {
+  for (const key of Object.keys(DEFAULTS)) { assert.equal(typeof LABELS[key], "string", key); assert.equal(typeof HINTS[key], "string", key); }
 });
-
-test("normalize rounds whale and fish counts", () => {
-  const result = normalize({ count: 4.7, fishCount: 233 });
-  assert.equal(result.count, 5);
-  assert.equal(result.fishCount, 230);
-  assert.equal(Number.isInteger(result.count), true);
-});
-
-test("normalize recovers from malformed numbers and colours", () => {
-  const result = normalize({ density: "NaN", speed: null, color: "#12", enabled: "yes" });
-  assert.equal(result.density, DEFAULTS.density);
-  assert.equal(result.speed, DEFAULTS.speed);
-  assert.equal(result.color, DEFAULTS.color);
-  assert.equal(result.enabled, true);
-});
-
-test("normalize rejects unknown enum values", () => {
-  const result = normalize({ species: "shark", eyeColor: "red", glyphMode: "klingon" });
-  assert.equal(result.species, DEFAULTS.species);
-  assert.equal(result.eyeColor, DEFAULTS.eyeColor);
-  assert.equal(result.glyphMode, DEFAULTS.glyphMode);
-});
-
-test("normalize lowercases a valid colour", () => {
-  assert.equal(normalize({ color: "#AABBCC" }).color, "#aabbcc");
-});
-
-test("validatePatch rejects malformed input", () => {
-  assert.equal(validatePatch(null).ok, false);
-  assert.equal(validatePatch({ density: "x" }).ok, false);
-  assert.equal(validatePatch({ color: "blue" }).ok, false);
-  assert.equal(validatePatch({ enabled: "true" }).ok, false);
-  assert.equal(validatePatch({ species: "dolphin" }).ok, false);
-});
-
-test("validatePatch returns a normalized, clamped patch", () => {
-  const result = validatePatch({ density: 3, color: "#123456", species: "orca" });
-  assert.equal(result.ok, true);
-  assert.equal(result.normalized.density, 1);
-  assert.equal(result.normalized.color, "#123456");
-  assert.equal(result.normalized.species, "orca");
-});
-
-test("resetDefaults returns a fresh mutable copy", () => {
-  const first = resetDefaults();
-  const second = resetDefaults();
-  assert.deepEqual(first, DEFAULTS);
-  assert.notEqual(first, second);
-  first.count = 1;
-  assert.equal(second.count, DEFAULTS.count);
-});
-
-test("every public control has a label and a hint", () => {
-  for (const key of Object.keys(DEFAULTS)) {
-    assert.equal(typeof LABELS[key], "string", key);
-    assert.equal(typeof HINTS[key], "string", key);
-    assert.ok(HINTS[key].length > 0, key);
-  }
-});
-
-test("range table, enum table, booleans and the colour control cover every control", () => {
-  const grouped = GROUPS.flatMap((group) => group.keys);
-  const handled = new Set([...Object.keys(RANGES), ...Object.keys(OPTIONS), ...BOOLEAN_KEYS, "color"]);
-  for (const key of grouped) assert.equal(handled.has(key), true, key);
+test("booleans and ranges cover grouped controls", () => {
+  const handled = new Set([...Object.keys(RANGES), ...BOOLEAN_KEYS]);
+  for (const key of GROUPS.flatMap((g) => g.keys)) assert.equal(handled.has(key), true, key);
 });

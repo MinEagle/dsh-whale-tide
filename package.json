@@ -1,63 +1,41 @@
 {
   "name": "dsh-whale-tide",
-  "version": "0.6.0",
-  "description": "Whale and fish schools swim across DeepSeek Harness, with the full dsh-ascii-whales control set and a dsh-quiet ebb in conversation.",
+  "version": "0.7.0",
+  "description": "Quiet dot-matrix backdrop with swimming whales and blur-to-clear streaming text, plus settings.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
-    "./locale/*.json": "./locale/*.json",
-    "./icon": "./icon.svg",
+    "./locale/zh.json": "./locale/zh.json",
+    "./locale/en.json": "./locale/en.json",
     "./package.json": "./package.json"
   },
   "files": [
-    "lib",
+    "lib/index.js",
+    "lib/client.js",
+    "lib/settings.js",
     "cordis.patch.yml",
-    "locale/*.json",
-    "icon.svg",
+    "locale/zh.json",
+    "locale/en.json",
     "README.md",
     "README.en.md",
-    "LICENSE",
     "THIRD_PARTY_NOTICES.md",
-    "vendor"
+    "LICENSE",
+    "LICENSE.dsh-quiet"
   ],
-  "engines": {
-    "node": ">=20",
-    "dsh": ">=0.2.0-rc.2 <0.3.0-0"
-  },
-  "dsh": {
-    "bundle": {
-      "patch": "./cordis.patch.yml"
-    },
-    "client": {
-      "platform": "web",
-      "immediately": true,
-      "inject": [
-        "@deepseek-ai/dsh-client-ui-settings",
-        "@deepseek-ai/dsh-client-ui-conversation",
-        "@deepseek-ai/dsh-client-locale"
-      ]
-    }
-  },
-  "icon": "icon.svg",
-  "scripts": {
-    "test": "node --test test/settings.test.js test/manifest.test.js"
-  },
   "keywords": [
     "dsh",
     "dsh-plugin",
     "deepseek-harness",
     "background",
     "canvas",
-    "ascii",
     "whale",
-    "boids",
-    "ambient"
+    "typewriter",
+    "streaming",
+    "settings"
   ],
-  "license": "MIT",
-  "author": "MinEagle",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MinEagle/dsh-whale-tide.git"
@@ -65,5 +43,21 @@
   "homepage": "https://github.com/MinEagle/dsh-whale-tide#readme",
   "bugs": {
     "url": "https://github.com/MinEagle/dsh-whale-tide/issues"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": []
+    }
+  },
+  "license": "MIT",
+  "engines": {
+    "dsh": ">=0.2.0-rc.2 <0.3.0-0"
+  },
+  "scripts": {
+    "test": "node --test"
   }
 }
