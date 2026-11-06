@@ -3,7 +3,10 @@
 function createOcean(canvas,opts){opts=opts||{};
 const settings=Object.assign({},opts.settings||{});
 let swimSpeed=Number(settings.speed)||1;
-let fishDensity=Number(settings.fishDensity)||1;
+let fishCount=Math.round(Number(settings.fishCount))||100;
+let fishGlint=Number(settings.fishGlint);if(!Number.isFinite(fishGlint))fishGlint=1;
+let fishColor=String(settings.fishColor||"#a9bde8");
+let sidebarFish=Math.round(Number(settings.sidebarFish))||0;
 let whaleCount=Math.round(Number(settings.whaleCount))||3;
 const reduced=opts.reducedMotion!=null?!!opts.reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches;
 const cv=canvas,ctx=cv.getContext('2d');
@@ -386,11 +389,21 @@ const SPEC=[
 const TOTAL_WEIGHT=SPEC.reduce((n,s)=>n+s.weight,0);
 function pickSpecies(){let r=Math.random()*TOTAL_WEIGHT;for(let i=0;i<SPEC.length;i++){r-=SPEC[i].weight;if(r<=0)return i;}return 0;}
 let sepX=[],sepY=[],perc=60;
+let fishBucketCols=0,fishBucketRows=0,fishBucketHead=new Int32Array(0),fishBucketNext=new Int32Array(0);
+function rebuildFishHash(){
+  const size=Math.max(1,perc),pad=2;
+  const cols2=Math.ceil(W/size)+pad*2,rows2=Math.ceil(H/size)+pad*2;
+  if(cols2!==fishBucketCols||rows2!==fishBucketRows){fishBucketCols=cols2;fishBucketRows=rows2;fishBucketHead=new Int32Array(cols2*rows2);}
+  fishBucketHead.fill(-1);
+  if(fishBucketNext.length!==fish.length)fishBucketNext=new Int32Array(fish.length);
+  for(let i=0;i<fish.length;i++){const f=fish[i];if(!f.alive)continue;
+    const c=clamp(Math.floor(f.x/size)+pad,0,cols2-1),r=clamp(Math.floor(f.y/size)+pad,0,rows2-1);
+    const b=r*cols2+c;fishBucketNext[i]=fishBucketHead[b];fishBucketHead[b]=i;}}
 function seedFish(){
   fish.length=0;schools.length=0;
   sepX=SPEC.map(s=>s.spacing[0]*cw);sepY=SPEC.map(s=>s.spacing[1]*ch);
   perc=Math.max(ch*3,cw*5.5);
-  const total=Math.max(12,Math.round(100*clamp(fishDensity,.2,2)));
+  const total=Math.max(20,Math.min(200,Math.round(fishCount)));
   let schoolId=0;
   while(fish.length<total){
     const sp=pickSpecies(),def=SPEC[sp];
@@ -402,7 +415,7 @@ function seedFish(){
     for(let k=0;k<size;k++){
       fish.push({x:cx+rand(-1,1)*sepX[sp]*Math.sqrt(size),y:cy+rand(-1,1)*sepY[sp]*Math.sqrt(size)*.6,
         vx:Math.cos(dir)*def.cruise,vy:Math.sin(dir)*def.cruise,sp,alarm:0,alive:true,respawnAt:0,
-        phase:rand(0,TAU),turn:0,depth:rand(.55,1),millDir,school:schoolId});
+        phase:rand(0,TAU),turn:0,depth:rand(.55,1),millDir,school:schoolId,sidebar:false});
     }
     schoolId++;
   }
@@ -410,7 +423,7 @@ function seedFish(){
 }
 function stepSchools(dt){
   for(const s of schools){s.cx=0;s.cy=0;s.n=0;}
-  for(const f of fish){if(!f.alive)continue;const s=schools[f.school];s.cx+=f.x;s.cy+=f.y;s.n++;}
+  for(const f of fish){if(!f.alive||f.sidebar)continue;const s=schools[f.school];s.cx+=f.x;s.cy+=f.y;s.n++;}
   for(const s of schools){if(!s.n)continue;s.cx/=s.n;s.cy/=s.n;s.next-=dt;
     const edge=s.cx<W*.08||s.cx>W*.92||s.cy<H*.1||s.cy>H*.9;
     if(s.next<=0||(edge&&s.next<8)){s.next=rand(8,16);
@@ -418,7 +431,20 @@ function stepSchools(dt){
       else s.dir+=(Math.random()<.5?-1:1)*rand(.8,2.2);}}}
 function stepFish(dt){
   const R2=perc*perc,calm=Math.exp(-dt*.7),cont=Math.min(1,dt*6);
+  rebuildFishHash();
   for(let i=0;i<fish.length;i++){const f=fish[i];if(!f.alive)continue;const sp=SPEC[f.sp];
+    if(f.sidebar){
+      const sx=splitX();
+      if(!conversationMode||sx<24){f.sidebar=false;f.sideWp=null;}
+      else{
+        if(!f.sideWp||Math.hypot(f.sideWp.x-f.x,f.sideWp.y-f.y)<16||Math.random()<.0018){f.sideWp={x:rand(14,Math.max(20,sx-14)),y:rand(H*.18,H*.82)};}
+        const dx=f.sideWp.x-f.x,dy=f.sideWp.y-f.y,d=Math.hypot(dx,dy)||1;
+        f.vx+=(dx/d*45-f.vx)*Math.min(1,dt*1.2);f.vy+=(dy/d*26-f.vy)*Math.min(1,dt*1.2);
+        f.x=clamp(f.x+f.vx*dt,10,sx-10);f.y=clamp(f.y+f.vy*dt,H*.14,H*.86);
+        f.phase+=dt*(6+Math.hypot(f.vx,f.vy)*.1);
+        continue;
+      }
+    }
     if(f.exitMode){
       if(f.exitMode==='away')continue;
       const targetX=clamp(f.x,W*.25,W*.75),targetY=clamp(f.y,H*.25,H*.75);
@@ -434,12 +460,39 @@ function stepFish(dt){
     const spread=1+1.8*f.alarm,sX=sepX[f.sp]*spread,sY=sepY[f.sp]*spread;
     const spd=Math.hypot(f.vx,f.vy)||1,hx=f.vx/spd,hy=f.vy/spd;
     let ax=0,ay=0,sx=0,sy=0,avx=0,avy=0,cx=0,cy=0,n=0,na=0;
-    for(let j=0;j<fish.length;j++){const o=fish[j];if(j===i||!o.alive)continue;const dx=o.x-f.x,dy=o.y-f.y,d2=dx*dx+dy*dy;
-      if(d2>=R2||d2<1e-6)continue;const d=Math.sqrt(d2);if((dx*hx+dy*hy)/d<=-.6)continue;
-      const qx=dx/sX,qy=dy/sY,q2=qx*qx+qy*qy;if(q2<1){const q=Math.sqrt(q2)||1e-3,k=(1-q)/q;sx-=qx*k;sy-=qy*k;}
-      if(o.sp===f.sp){avx+=o.vx;avy+=o.vy;cx+=dx;cy+=dy;n++;}
-      else if(d<cw*3){const k=((1-d/(cw*3))/d)*.6;sx-=dx*k;sy-=dy*k;}
-      if(o.alarm>na)na=o.alarm;}
+    {
+      const size = Math.max(1, perc);
+      const bc = clamp(Math.floor(f.x / size) + 2, 0, fishBucketCols - 1);
+      const br = clamp(Math.floor(f.y / size) + 2, 0, fishBucketRows - 1);
+      for (let rr = br - 1; rr <= br + 1; rr++) {
+        if (rr < 0 || rr >= fishBucketRows) continue;
+        for (let cc = bc - 1; cc <= bc + 1; cc++) {
+          if (cc < 0 || cc >= fishBucketCols) continue;
+          let j = fishBucketHead[rr * fishBucketCols + cc];
+          while (j !== -1) {
+            const o = fish[j];
+            const nextJ = fishBucketNext[j];
+            if (j !== i && o.alive) {
+              const dx = o.x - f.x, dy = o.y - f.y, d2 = dx * dx + dy * dy;
+              if (d2 < R2 && d2 > 1e-6) {
+                const d = Math.sqrt(d2);
+                if ((dx * hx + dy * hy) / d > -0.6) {
+                  const qx = dx / sX, qy = dy / sY, q2 = qx * qx + qy * qy;
+                  if (q2 < 1) {
+                    const q = Math.sqrt(q2) || 1e-3, k = (1 - q) / q;
+                    sx -= qx * k; sy -= qy * k;
+                  }
+                  if (o.sp === f.sp) { avx += o.vx; avy += o.vy; cx += dx; cy += dy; n++; }
+                  else if (d < cw * 3) { const k = ((1 - d / (cw * 3)) / d) * 0.6; sx -= dx * k; sy -= dy * k; }
+                  if (o.alarm > na) na = o.alarm;
+                }
+              }
+            }
+            j = nextJ;
+          }
+        }
+      }
+    }
     ax+=sx*420;ay+=sy*420;
     if(n>0){const aK=1.4*sp.align,cK=sp.coh*(1-.8*f.alarm);ax+=(avx/n-f.vx)*aK+(cx/n)*cK;ay+=(avy/n-f.vy)*aK+(cy/n)*cK;
       if(sp.mill>0){const cl=Math.hypot(cx,cy)||1;ax+=-cy/cl*f.millDir*sp.mill*(1-f.alarm);ay+=cx/cl*f.millDir*sp.mill*(1-f.alarm);}}
@@ -804,11 +857,12 @@ function render(){
   const bandTop=chatTop(),bandLeft=splitX(),inBand=i=>{const c=i%cols,r=(i/cols)|0;return c*cw+cw*.5>=bandLeft&&r*ch+ch*.5<bandTop;};
   field();
   // fish snap to cells (not under a creature)
-  frameId++;const fishA=P.fish;
-  for(const f of fish){if(!f.alive)continue;const i=cellIdx(f.x,f.y);if(i<0||wFlag[i]||fishStamp[i]===frameId||(reduced&&conversationMode))continue;fishStamp[i]=frameId;
+  frameId++;const fishA=P.fish;const fishColored=!!fishColor;
+  for(const f of fish){if(!f.alive)continue;if(fishColored)continue;const i=cellIdx(f.x,f.y);if(i<0||wFlag[i]||fishStamp[i]===frameId||(reduced&&conversationMode))continue;fishStamp[i]=frameId;
     const depthA=.55+.45*((f.depth||.8)-.55)/.45;
+    const glint=Math.min(1,Math.abs(f.turn||0)/3.5);
     cellG[i]=(f.depth||.8)<.68?G_PER:G_DASH;
-    cellA[i]=fishA*depthA*(.85+.3*f.alarm)*edgeFade(f.exitMode,f.x,f.y,55);}
+    cellA[i]=fishA*depthA*(.75+.35*glint*fishGlint+.3*f.alarm)*edgeFade(f.exitMode,f.x,f.y,55);}
   ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.clearRect(0,0,cv.width,cv.height);
   const cx=cw*dpr,cy=ch*dpr,ink=`rgb(${P.ink},${P.ink},${P.ink})`;
   // faint cell blocks under the creatures' bodies (reads as one solid creature, like the reference)
@@ -825,6 +879,17 @@ function render(){
   for(let i=0;i<N;i++){const b=bOf[i];if(b!==SKIP)order[cur[b]++]=i;}
   for(let b=1;b<NB;b++){const n=counts[b];if(!n)continue;ctx.globalAlpha=b/NB*AMAX;const st=starts[b];
     for(let k=st;k<st+n;k++){const i=order[k],c=i%cols,r=(i/cols)|0;ctx.drawImage(atlas,cellG[i]*sw,0,sw,sh,Math.round(c*cx),Math.round(r*cy),sw,sh);}}
+  // coloured fish pass: 100 fish × fillText is cheap compared with the cell field
+  if(fishColored){
+    ctx.font=`400 ${Math.round(ch*.74)}px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=fishColor;
+    for(const f of fish){if(!f.alive||(reduced&&conversationMode))continue;const i=cellIdx(f.x,f.y);if(i<0||wFlag[i]||inBand(i))continue;
+      const depthA=.55+.45*((f.depth||.8)-.55)/.45;
+      const glint=Math.min(1,Math.abs(f.turn||0)/3.5);
+      const a=Math.min(.95,.28+.55*depthA+.22*glint*fishGlint+.15*f.alarm)*edgeFade(f.exitMode,f.x,f.y,55);
+      if(a<.02)continue;ctx.globalAlpha=a;
+      ctx.fillText((f.depth||.8)<.68?'.':'-',(i%cols)*cw+cw/2,((i/cols)|0)*ch+ch/2+1,Math.max(1,cw-1));}
+    ctx.globalAlpha=1;
+  }
   // bubbles / spout glyphs (free-floating), same grey
   for(const p of parts){const f=1-p.age/p.life,a=(conversationMode?0:1)*Math.min(1,p.age*4)*f*P.whale*(p.k==='bub'?.9:1.05)*(wMask[Math.max(0,cellIdx(p.x,p.y))]||1);
     if(a<.004)continue;ctx.globalAlpha=Math.min(AMAX,a);ctx.drawImage(atlas,p.g*sw,0,sw,sh,Math.round(p.x*dpr-sw/2),Math.round(p.y*dpr-sh/2),sw,sh);}
@@ -848,10 +913,15 @@ let lastBub=0;
 const api={
   /** Apply live settings; fish density reseeds the schools. */
   setSettings(next){Object.assign(settings,next||{});
-    const fd=clamp(Number(settings.fishDensity)||1,.2,2);
+    const fc=Math.max(20,Math.min(200,Math.round(Number(settings.fishCount)||100)));
+    const fg=Math.max(0,Math.min(2,Number(settings.fishGlint)||0));
+    const sf=Math.max(0,Math.min(12,Math.round(Number(settings.sidebarFish)||0)));
     const wc=Math.max(1,Math.min(3,Math.round(Number(settings.whaleCount)||3)));
     swimSpeed=clamp(Number(settings.speed)||1,.2,2);
-    if(fd!==fishDensity){fishDensity=fd;seedFish();}
+    fishGlint=fg;
+    fishColor=String(settings.fishColor||"#a9bde8");
+    if(fc!==fishCount){fishCount=fc;seedFish();}
+    if(sf!==sidebarFish){sidebarFish=sf;}
     if(wc!==whaleCount){whaleCount=wc;applyWhaleVisibility();}
     draw();},
   /** 'light' | 'dark' — ink crossfades over 400 ms (instant under reduced motion) */
@@ -869,7 +939,17 @@ const api={
     if(immediate||reduced)seaCalm=conversationMode?.62:1;
     const sx=splitX();
     if(conversationMode){
-      for(const f of fish)f.exitMode='leaving';
+      // Keep a small school inside the sidebar so it never goes completely blank.
+      const keep=Math.max(0,Math.min(sidebarFish,fish.length));
+      const candidates=fish.slice().sort((a,b)=>Math.abs(a.x-sx*.5)-Math.abs(b.x-sx*.5));
+      for(const f of fish){f.sidebar=false;f.sideWp=null;}
+      if(sx>0){
+        for(let i=0;i<keep;i++){const f=candidates[i];if(!f)break;
+          f.sidebar=true;f.exitMode=null;f.alive=true;
+          f.x=rand(14,Math.max(20,sx-14));f.y=rand(H*.18,H*.82);
+          f.vx=(Math.random()<.5?-1:1)*SPEC[f.sp].cruise*.45;f.vy=rand(-5,5);}
+      }
+      for(const f of fish)if(!f.sidebar)f.exitMode='leaving';
       if(ray.on)ray.exitMode='leaving';
       resident=null;residentTimer=0;residentEnter=0;released=null;
       if(sx>0){                                   // keep whoever is already in the sidebar, else send the mother in
@@ -888,7 +968,7 @@ const api={
         w.exitMode='leaving';w.exitDir=a;w.mode='leaving';w.queue.length=0;w.entry=null;w.entryFor=null;});
       if(immediate||reduced){
         for(const w of outs){const a=w.exitDir;placeOffscreen(w,a);}
-        for(const f of fish){const side=f.x<W*.5?-1:1;f.x=side<0?-20:W+20;f.y=clamp(f.y,H*.2,H*.8);f.vx=-side*SPEC[f.sp].cruise;f.vy=0;f.exitMode='away';}
+        for(const f of fish){if(f.sidebar)continue;const side=f.x<W*.5?-1:1;f.x=side<0?-20:W+20;f.y=clamp(f.y,H*.2,H*.8);f.vx=-side*SPEC[f.sp].cruise;f.vy=0;f.exitMode='away';}
         if(ray.on){ray.on=false;ray.exitMode=null;}
       }
       if((immediate||reduced)&&resident){placeResidentStatic();residentTimer=rand(30,60);}
@@ -905,6 +985,7 @@ const api={
           if(w.exitMode==='away')reenterFromEdge(w);
           else{w.exitMode=null;w.exitDir=null;w.entry=null;w.entryFor=null;w.mode='roam';w.queue.length=0;w.ptx=NaN;nextWp(w);}}
         for(const f of fish){
+          if(f.sidebar){f.sidebar=false;f.sideWp=null;f.exitMode='entering';}
           if(f.exitMode==='away'){const side=f.x<0?-1:1;f.x=side<0?-20:W+20;f.y=rand(H*.25,H*.75);f.vx=-side*SPEC[f.sp].cruise;f.vy=0;f.exitMode='entering';}
           else if(f.exitMode)f.exitMode='entering';}
         if(ray.on){if(ray.exitMode==='away'){ray.on=false;ray.next=rand(8,16);}else ray.exitMode=null;}
