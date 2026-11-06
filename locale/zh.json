@@ -44,7 +44,7 @@
   "hintEnabled": "关闭后移除背景层，界面恢复原生样式",
   "hintDensity": "空会话中显示的鱼群比例",
   "hintOpacity": "空会话中的背景不透明度",
-  "hintConversationOpacity": "进入对话后的背景不透明度（默认 0.10）",
+  "hintConversationOpacity": "进入对话后的背景不透明度（默认 0.20）",
   "hintConversationDensity": "进入对话后保留的鱼群比例（默认 0.3）",
   "hintFollowTheme": "开启时跟随 DSH 深浅色；关闭时固定为关闭时的深浅色",
   "hintCount": "同时游动的鲸鱼数量",

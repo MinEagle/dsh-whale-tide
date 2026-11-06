@@ -45,9 +45,11 @@ test("tide defaults stay as shipped", () => {
   assert.equal(DEFAULTS.followTheme, true);
 });
 
-test("migrate lowers only the old 0.16 conversation default", () => {
-  assert.equal(migrate({ conversationOpacity: 0.16 }).conversationOpacity, 0.10);
+test("migrate raises only known old defaults to 0.20", () => {
+  assert.equal(migrate({ conversationOpacity: 0.16 }).conversationOpacity, 0.20);
+  assert.equal(migrate({ conversationOpacity: 0.10 }).conversationOpacity, 0.20);
   assert.equal(migrate({ conversationOpacity: 0.22 }).conversationOpacity, 0.22);
+  assert.equal(migrate({ conversationOpacity: 0.10 }, false).conversationOpacity, 0.10);
   assert.equal(migrate(null), null);
 });
 

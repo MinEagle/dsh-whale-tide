@@ -44,7 +44,7 @@
   "hintEnabled": "Turn off to remove the layer and restore the native interface.",
   "hintDensity": "Share of the school shown in an empty conversation.",
   "hintOpacity": "Layer opacity in an empty conversation.",
-  "hintConversationOpacity": "Layer opacity while a conversation is active (default 0.10).",
+  "hintConversationOpacity": "Layer opacity while a conversation is active (default 0.20).",
   "hintConversationDensity": "Share of fish kept while a conversation is active (default 0.3).",
   "hintFollowTheme": "On: follow DSH. Off: pin the mode active when switched off.",
   "hintCount": "How many whales swim at once.",

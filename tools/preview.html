@@ -2489,13 +2489,15 @@ var OceanEngine = class {
     const NS = "whale-tide";
     const STORAGE_KEY = "dsh-whale-tide:v1";
     const SCHEME_KEY = "dsh-whale-tide:scheme";
+    const SCHEMA_KEY = "dsh-whale-tide:schema";
+    const SCHEMA_VERSION = "2";
 
     const DEFAULTS = {
       // ── tide (this plugin) ────────────────────────────────────────────
       enabled: true,
       density: 0.65,
       opacity: 1,
-      conversationOpacity: 0.10,
+      conversationOpacity: 0.20,
       conversationDensity: 0.3,
       followTheme: true,
       // ── whale ─────────────────────────────────────────────────────────
@@ -2614,25 +2616,30 @@ var OceanEngine = class {
      * per-message halo was removed. Migrate only the old default so custom
      * values survive.
      */
-    function migrateSettings(value) {
+    function migrateSettings(value, schemaOld) {
       if (!value || typeof value !== "object" || Array.isArray(value)) return value;
       const out = { ...value };
-      if (out.conversationOpacity === 0.16) out.conversationOpacity = 0.10;
+      if (schemaOld && (out.conversationOpacity === 0.16 || out.conversationOpacity === 0.10)) {
+        out.conversationOpacity = 0.20;
+      }
       return out;
     }
 
     function loadSettings() {
       try {
+        const schemaOld = window.localStorage.getItem(SCHEMA_KEY) !== SCHEMA_VERSION;
         const raw = window.localStorage.getItem(STORAGE_KEY);
-        if (!raw) return { ...DEFAULTS };
+        if (!raw) {
+          try { window.localStorage.setItem(SCHEMA_KEY, SCHEMA_VERSION); } catch (error) { /* optional */ }
+          return { ...DEFAULTS };
+        }
         const parsed = JSON.parse(raw);
-        const migrated = migrateSettings(parsed);
-        if (migrated !== parsed) {
+        const migrated = migrateSettings(parsed, schemaOld);
+        if (migrated !== parsed || schemaOld) {
           try {
             window.localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-          } catch (error) {
-            /* keep the in-memory migration */
-          }
+            window.localStorage.setItem(SCHEMA_KEY, SCHEMA_VERSION);
+          } catch (error) { /* keep the in-memory migration */ }
         }
         return normalizeSettings(migrated);
       } catch (error) {
