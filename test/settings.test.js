@@ -15,6 +15,7 @@ test("defaults match the dsh-quiet template", () => {
   assert.equal(DEFAULTS.speed, 1);
   assert.equal(DEFAULTS.fishCount, 100);
   assert.equal(DEFAULTS.fishColor, "#a9bde8");
+  assert.equal(DEFAULTS.whaleColor, "#c3c8d2");
   assert.equal(DEFAULTS.fishGlint, 1);
   assert.equal(DEFAULTS.whaleCount, 3);
   assert.equal(DEFAULTS.sidebarFish, 6);
@@ -49,6 +50,6 @@ test("every control has label and hint", () => {
   for (const key of Object.keys(DEFAULTS)) { assert.equal(typeof LABELS[key], "string", key); assert.equal(typeof HINTS[key], "string", key); }
 });
 test("booleans and ranges cover grouped controls", () => {
-  const handled = new Set([...Object.keys(RANGES), ...BOOLEAN_KEYS, "fishColor"]);
+  const handled = new Set([...Object.keys(RANGES), ...BOOLEAN_KEYS, "fishColor", "whaleColor"]);
   for (const key of GROUPS.flatMap((g) => g.keys)) assert.equal(handled.has(key), true, key);
 });
