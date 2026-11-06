@@ -34,9 +34,13 @@ the empty conversation the fish swim back in from the edges.
   limit; Reynolds boids with an `Int32Array` spatial hash. Fish scatter around
   the whale and the pointer, then regroup.
 - **High tide / ebb tide** — `hero`: full opacity, all fish, frosted composer.
-  `active` uses dsh-quiet's full-window ebb: opacity falls to 16%, 30% of the
-  fish remain, the composer returns to native, and conversation text gets a
-  soft inherited halo.
+  `active` uses dsh-quiet's full-window ebb: opacity falls to 16% and 30% of
+  the fish remain.
+- **Conversation readability** — 14 host surface tokens (bg layers, bubble,
+  borders, labels) become lightly translucent, each assistant message gets a
+  local `.dshwt-prose` halo panel (::before + 2px blur), the composer keeps a
+  0.74/0.78 frosted tint with 3px blur, popovers stay opaque and borders are
+  0.5px at DPR>=2.
 - **Configurable** — exactly eight settings, applied live, saved in
   `localStorage`, with a restore-defaults button.
 - **Light / dark** — following the DSH theme switches the backdrop colour,
@@ -69,11 +73,11 @@ From npm (once published):
 dsh plugin --profile <your-profile> add dsh-whale-tide
 ```
 
-From the 0.2.1 GitHub Release tarball:
+From the 0.3.0 GitHub Release tarball:
 
 ```bash
 dsh plugin --profile <your-profile> add \
-  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.2.1/dsh-whale-tide-0.2.1.tgz
+  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.3.0/dsh-whale-tide-0.3.0.tgz
 ```
 
 From a local checkout:
@@ -142,7 +146,7 @@ Four groups; changes apply live, persist in `localStorage`
 
 | Setting | Default | Range | Notes |
 | --- | --- | --- | --- |
-| Frosted composer | on | on / off | High tide only; disabled while active |
+| Frosted composer | on | on / off | Both states; lighter 0.74/0.78 tint while active |
 | Glass blur | 14 px | 0–64 | Backdrop blur radius |
 | Glass opacity | 0.45 | 0–1 | Tint opacity |
 
@@ -251,7 +255,7 @@ See [docs/design.md](docs/design.md).
   the `hero` state instead of breaking.
 - The UI exposes 24 settings from upstream; internal steering and hunger
   constants stay in the engine.
-- 0.2.1 is available as a GitHub Release tarball but not yet on the npm
+- 0.3.0 is available as a GitHub Release tarball but not yet on the npm
   registry; the repository also includes a local directory install and a
   packed `dist/*.tgz`.
 

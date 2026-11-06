@@ -62,7 +62,7 @@
   "hintGridOpacity": "Background grid opacity.",
   "hintFishCount": "Total simulated fish.",
   "hintGlyphMode": "ASCII uses monospace; Hanzi uses a serif CJK face.",
-  "hintGlass": "Frost the composer in an empty conversation.",
+  "hintGlass": "Frost the composer in both the empty and conversation states.",
   "hintBlur": "Backdrop blur radius.",
   "hintGlassOpacity": "Tint opacity behind the composer.",
   "reset": "Restore defaults",

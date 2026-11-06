@@ -25,7 +25,8 @@ DeepSeek Harness（DSH）的动态背景插件：三头座头鲸与鱼群在**�
 
 - **纯代码渲染**：没有 PNG / WebP / GIF / MP4 运行时素材；鲸鱼、鱼群、尾迹、点阵底纹全部由 Canvas 字符与色块生成。
 - **鲸鱼 + 鱼群**：直接复用 [dsh-ascii-whales](https://github.com/Chael-Chael/dsh-ascii-whales) 的 `World` / `AsciiRenderer` 游动实现——三头座头鲸在全窗口巡游、摆尾、转弯；鱼群基于 Boids（分离 / 对齐 / 聚合 + 空间哈希桶），受鲸鱼与鼠标惊扰时会散开再聚拢。
-- **满潮 / 退潮**：空会话 `hero` 全不透明度、全部鱼群、输入框磨砂玻璃；对话 `active` 使用 dsh-quiet 的整窗退潮：降到 16% 透明度、保留 30% 鱼群、关闭磨砂，并给正文加柔光。
+- **满潮 / 退潮**：空会话 `hero` 全不透明度、全部鱼群、输入框磨砂玻璃；对话 `active` 使用 dsh-quiet 的整窗退潮：降到 16% 透明度、保留 30% 鱼群。
+- **对话可读性**：对话中把 `bg-layer-1/2/3`、气泡、边框、文字色等 14 个主题 token 换成 dsh-quiet 同款的「半透表面」；每条助手消息自动挂 `.dshwt-prose`，用局部柔光片（`::before` + blur 2px）保护阅读；输入框保留 0.74/0.78 的轻磨砂（3px），弹出菜单保持不透明，DPR≥2 时边框 0.5px。
 - **可配置**：设置页只暴露 8 项，改完立即生效，刷新保留，带「恢复默认」。
 - **深/浅色适配**：跟随 DSH 主题时，背景底色、侧栏玻璃、正文柔光、毛玻璃与画布配色一起切换；识别 `data-ds-theme-source` / `body[data-ds-dark-theme]` / `color-scheme`，不依赖 body 背景色。
 - **安静**：尊重 `prefers-reduced-motion`（只画一帧静态画面）；页面隐藏时暂停 `requestAnimationFrame`。
@@ -48,11 +49,11 @@ DeepSeek Harness（DSH）的动态背景插件：三头座头鲸与鱼群在**�
 dsh plugin --profile <你的 profile> add dsh-whale-tide
 ```
 
-从 GitHub Release 的 tgz 安装（0.2.1 已发布）：
+从 GitHub Release 的 tgz 安装（0.3.0 已发布）：
 
 ```bash
 dsh plugin --profile <你的 profile> add \
-  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.2.1/dsh-whale-tide-0.2.1.tgz
+  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.3.0/dsh-whale-tide-0.3.0.tgz
 ```
 
 从本地目录安装：
@@ -116,8 +117,8 @@ dsh plugin --profile <你的 profile> add /absolute/path/to/dsh-whale-tide
 
 | 设置 | 默认 | 范围 | 说明 |
 | --- | --- | --- | --- |
-| 毛玻璃输入框 | 开 | 开 / 关 | 只在空会话（hero）生效；对话中自动关闭 |
-| 玻璃模糊 | 14 px | 0–64 | 磨砂模糊半径 |
+| 毛玻璃输入框 | 开 | 开 / 关 | 空会话与对话中都生效；对话中用 0.74/0.78 轻磨砂 |
+| 玻璃模糊 | 14 px | 0–64 | 空会话磨砂模糊半径（对话中固定 3px） |
 | 玻璃不透明度 | 0.45 | 0–1 | 磨砂底色不透明度 |
 
 > 「重建世界」的项（数量、种类、大小、鱼群数量、字符栅格）会重建引擎；其余项实时生效，不会打断游动。
@@ -219,7 +220,7 @@ dsh-whale-tide/
 - 0.2.0 补齐了上游全部 24 项设置，并修正深色模式；对话退潮沿用 dsh-quiet 的整层透明度 + 继承式正文柔光。
 - DSH 内部的会话 DOM 不是公开 API。相位检测只用 `data-content-phase` 与 `data-conversation-*` 属性；若未来 DSH 改动这些属性，插件会退化到「始终 hero」，不会报错或破坏页面。
 - 设置按上游参数暴露 24 项；引擎内部还有追逐/饥饿等未暴露的常量。
-- 0.2.1 已发布 GitHub Release（含 tgz），但尚未发布到 npm registry；仓库内也附可直接安装的本地目录与 `dist/*.tgz`。
+- 0.3.0 已发布 GitHub Release（含 tgz），但尚未发布到 npm registry；仓库内也附可直接安装的本地目录与 `dist/*.tgz`。
 
 ## License
 

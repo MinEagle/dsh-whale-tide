@@ -1,4 +1,4 @@
-# Release 0.2.1
+# Release 0.3.0
 
 Checklist for publishing Whale Tide.
 
@@ -17,7 +17,7 @@ Expected: 16 tests pass; the client parses; `package.json` has no
 
 ```bash
 npm pack --pack-destination dist
-tar -tzf dist/dsh-whale-tide-0.2.1.tgz | sort
+tar -tzf dist/dsh-whale-tide-0.3.0.tgz | sort
 ```
 
 The tarball must contain:
@@ -51,11 +51,11 @@ machine with access and the same `package.json`/`files` list.
 ## 4. GitHub release
 
 ```bash
-git tag v0.2.1
-git push origin v0.2.1
-gh release create v0.2.1 dist/dsh-whale-tide-0.2.1.tgz \
-  --title "Whale Tide 0.2.1" \
-  --notes-file docs/releases/0.2.1.md
+git tag v0.3.0
+git push origin v0.3.0
+gh release create v0.3.0 dist/dsh-whale-tide-0.3.0.tgz \
+  --title "Whale Tide 0.3.0" \
+  --notes-file docs/releases/0.3.0.md
 ```
 
 The release body should link:
@@ -68,7 +68,7 @@ The release body should link:
 ## 5. Post-publish smoke test
 
 ```bash
-dsh plugin --profile <profile> add dsh-whale-tide@0.2.1
+dsh plugin --profile <profile> add dsh-whale-tide@0.3.0
 ```
 
 Then:

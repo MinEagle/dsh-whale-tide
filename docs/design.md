@@ -1,6 +1,6 @@
 # 设计说明
 
-本文说明鲸汐（Whale Tide）0.2.0 的架构、相位模型、渲染流水线、性能取舍与验证边界。
+本文说明鲸汐（Whale Tide）0.3.0 的架构、相位模型、渲染流水线、性能取舍与验证边界。
 需求与验收见仓库根目录 README；这里记录“为什么这样做”。
 
 ## 1. 目标与非目标
@@ -293,6 +293,24 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
 
 背景底色、侧栏 token、正文 text-shadow、磨砂底色、画布调色板都按这两个属性
 分浅/深两套；切换时只更新属性与引擎 `setAppearance`，不重建引擎。
+
+### 4.9 对话可读性（0.3.0）
+
+对话界面按 dsh-quiet 的三层机制处理，但都不接管消息渲染：
+
+1. **主题 token**（`theme.overrideTokens`，卸载自动还原）：`bg-base` 透明，
+   `bg-layer-1` 0.84/0.88，`bg-layer-2/3` 保持不透明（弹层可读），sidebar
+   0.55/0.60，气泡 0.92/0.90，label 与 border 全套。共 14 项。
+2. **正文柔光片**：`tagProse()` 在每个 `[data-slot="conversation.chat.node"]`
+   的直接子 wrapper 上挂 `.dshwt-prose`；CSS 用 `::before`（inset -7/-12、
+   圆角 14、白 0.70 / 深 0.72、blur 2px）做局部柔光。按结构找节点，不依赖
+   哈希类名；MutationObserver + 250ms 节流跟随流式输出。
+3. **输入框与弹层**：对话中 `[data-composer-card]` 0.74/0.78 + blur 3px，
+   `[data-trigger-menu]` 强制不透明，DPR≥2 边框 0.5px。
+
+与 0.2.x 的区别：0.2.x 只把 `bg-base` 透明 + 给整个 chat 容器加
+`text-shadow`，导致气泡、卡片、输入框仍是不透明白块，文字阴影对大块蓝色
+鲸鱼也几乎无效。
 
 ## 5. 性能取舍
 

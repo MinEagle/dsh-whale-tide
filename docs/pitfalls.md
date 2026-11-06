@@ -375,3 +375,34 @@ return luminance < .45 ? "dark" : "light";
 验证：真实 DSH 中把「字符风格」切到汉字后，canvas 字体为
 `"Songti SC","Noto Serif SC",…serif`，层属性 `data-glyph="hanzi"`，画布按方
 格重排（12285 → 11856 格），恢复默认后回到 ASCII 与等宽字体。
+
+## 27. 对话里「只透了一层」：气泡/卡片/输入框仍是白块（用户反馈）
+
+0.2.x 的退潮只做了两件事：`--dsw-alias-bg-base: transparent` + 整个 chat 容器
+`text-shadow`。实测对话中：
+
+- `--dsw-alias-bg-layer-1` 仍是 `#fff`，卡片、工具卡是不透明白块；
+- 用户气泡 `#edf3fe`、输入框 `rgb(255,255,255)` 都不透；
+- 26px 的白色 text-shadow 对大块蓝色鲸鱼几乎无效，文字反而发虚。
+
+0.3.0 按 dsh-quiet 的做法补齐三层：14 个主题 token（`theme.overrideTokens`，
+卸载还原）、每条助手消息的 `.dshwt-prose` 局部柔光片（::before + blur 2px）、
+对话中的 0.74/0.78 轻磨砂输入框与不透明弹层。
+
+验证：对话中 `--dsw-alias-bg-layer-1` = `rgba(255,255,255,0.84)`（深色
+`rgba(23,24,28,0.88)`），气泡 `rgba(237,243,254,0.92)`，composer
+`rgba(255,255,255,0.74)` + `blur(3px)`，`.dshwt-prose::before` 为白 0.70 +
+`blur(2px)`；关闭插件后全部回到原生值，`.dshwt-prose` 归零。
+
+## 28. 给消息挂 class 不能靠哈希类名
+
+DSH 的 class 是 CSS Modules 哈希（`XNZzAa_body`、`_markdown_rve47_5`），版本
+升级就会变。`tagProse()` 用结构定位：
+
+```
+p/li/pre/table/... → 向上找到 parent 带 data-slot="conversation.chat.node" 的那层
+```
+
+再挂 `.dshwt-prose`；只处理 `conversation.chat.flow` 内、跳过
+`conversation.chat.turnTail`。MutationObserver 监听 body 子树 + 250ms 节流，
+流式新增的段落也能在 250ms 内被覆盖。

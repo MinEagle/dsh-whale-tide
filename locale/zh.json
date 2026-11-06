@@ -62,7 +62,7 @@
   "hintGridOpacity": "背景网格透明度",
   "hintFishCount": "模拟的鱼群总数",
   "hintGlyphMode": "ASCII 用等宽字符，汉字用衬线汉字",
-  "hintGlass": "空会话中给输入框加磨砂",
+  "hintGlass": "空会话与对话中给输入框加磨砂",
   "hintBlur": "磨砂模糊半径",
   "hintGlassOpacity": "磨砂底色不透明度",
   "reset": "恢复默认",
