@@ -1,6 +1,6 @@
 {
   "name": "dsh-whale-tide",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Whale and fish schools swim across DeepSeek Harness, with the full dsh-ascii-whales control set and a dsh-quiet ebb in conversation.",
   "type": "module",
   "main": "lib/index.js",

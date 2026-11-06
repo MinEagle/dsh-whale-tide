@@ -49,11 +49,11 @@ DeepSeek Harness（DSH）的动态背景插件：三头座头鲸与鱼群在**�
 dsh plugin --profile <你的 profile> add dsh-whale-tide
 ```
 
-从 GitHub Release 的 tgz 安装（0.4.1 已发布）：
+从 GitHub Release 的 tgz 安装（0.5.0 已发布）：
 
 ```bash
 dsh plugin --profile <你的 profile> add \
-  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.4.1/dsh-whale-tide-0.4.1.tgz
+  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.5.0/dsh-whale-tide-0.5.0.tgz
 ```
 
 从本地目录安装：
@@ -204,13 +204,14 @@ dsh-whale-tide/
 ## 性能与实现
 
 - 固定步长引擎：`STEP = 1/60`，`MAX_STEPS = 4`，累加器追帧；掉帧时最多补 4 步，避免雪崩。
-- 网格：8 px 字符格；1920×876 下约 17,520 格。上游 ASCII 渲染器逐格 `fillText`，预览实测约 30 fps；`GlyphAtlas` / `InkRamp` 仍保留在引擎的 Kanji 分支中。
+- 网格：8 px 字符格；1920×876 下约 17,520 格。上游 ASCII 渲染器逐格 `fillText`；0.5.0 起空会话 30fps/DPR 1.5，对话 18fps/DPR 1.0 + 低细节采样，`window.blur` 暂停。`GlyphAtlas` / `InkRamp` 仍保留在引擎的 Kanji 分支中。
 - 渲染：上游 `AsciiRenderer` 每帧清屏、恢复网格背景，再绘制鲸鱼、点阵、鱼、热区与尾迹；这是为了保持 dsh-ascii-whales 的原始观感与游动细节。
 - 鲸鱼：上游 `World` 的追逐 / 巡游 / 避让 + 18 节点脊线，后续节点受 `maxBend` 约束；渲染时叠加行波，形成摆尾与身体弯曲。
 - 鱼群：Boids + `Int32Array` 头链表空间哈希；按深度 / 转向 / 警报分桶，避免每帧为每条鱼设置一次 `fillStyle`。
 - InkRamp（引擎 Kanji 分支）：候选字渲染到离屏 Canvas，读 `getImageData` 的 alpha 累加得到墨量，排序后采样成 64 档查表；ASCII 分支直接 `fillText`。
 - 字体：引擎在 `document.fonts.load(...)` 之后才设置 canvas 字体；`prefers-reduced-motion` 时先模拟 4 秒再画一帧。
-- 页面隐藏暂停 rAF；`prefers-reduced-motion` 时模拟 4 秒后只画一帧。
+- 页面隐藏/窗口失焦暂停 rAF；`prefers-reduced-motion` 时模拟 4 秒后只画一帧。
+- 性能实测（同一超大会话 8s）：关闭插件 TaskDuration 10%，0.4.1 22%，0.5.0 17%；对话中画布 1512×775（DPR 1.0）。
 
 详见 [docs/design.md](docs/design.md)。
 
@@ -220,7 +221,7 @@ dsh-whale-tide/
 - 0.2.0 补齐了上游全部 24 项设置，并修正深色模式；对话退潮沿用 dsh-quiet 的整层透明度 + 继承式正文柔光。
 - DSH 内部的会话 DOM 不是公开 API。相位检测只用 `data-content-phase` 与 `data-conversation-*` 属性；若未来 DSH 改动这些属性，插件会退化到「始终 hero」，不会报错或破坏页面。
 - 设置按上游参数暴露 24 项；引擎内部还有追逐/饥饿等未暴露的常量。
-- 0.4.1 已发布 GitHub Release（含 tgz），但尚未发布到 npm registry；仓库内也附可直接安装的本地目录与 `dist/*.tgz`。
+- 0.5.0 已发布 GitHub Release（含 tgz），但尚未发布到 npm registry；仓库内也附可直接安装的本地目录与 `dist/*.tgz`。
 
 ## License
 

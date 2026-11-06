@@ -73,11 +73,11 @@ From npm (once published):
 dsh plugin --profile <your-profile> add dsh-whale-tide
 ```
 
-From the 0.4.1 GitHub Release tarball:
+From the 0.5.0 GitHub Release tarball:
 
 ```bash
 dsh plugin --profile <your-profile> add \
-  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.4.1/dsh-whale-tide-0.4.1.tgz
+  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.5.0/dsh-whale-tide-0.5.0.tgz
 ```
 
 From a local checkout:
@@ -234,11 +234,15 @@ dsh-whale-tide/
 ## Performance notes
 
 - Fixed timestep `1/60` with at most 4 catch-up steps per frame.
-- 8 px cells; about 17,520 cells at 1920×876.
+- 8 px cells; about 17,520 cells at 1920×876. Since 0.5.0: 30fps / DPR 1.5
+  in hero, 18fps / DPR 1.0 / low-detail sampling in conversation, and rAF
+  paused on window blur.
 - Upstream ASCII renderer: clear, restore the grid background, then draw
   whales, dots, fish, heat and wake every frame; ~30 fps in the preview at
   1920×876. `GlyphAtlas` / `InkRamp` remain on the engine's Kanji path.
 - Fish are bucketed by depth/turn/alarm, one `fillStyle` per bucket.
+- Performance (same large conversation, 8s): plugin off 10% TaskDuration,
+  0.4.1 22%, 0.5.0 17%; active canvas 1512×775 at DPR 1.0.
 - `InkRamp` (engine Kanji path) measures a glyph pool once at startup and
   builds a 64-level ramp; the ASCII path draws with `fillText` directly.
 - The engine loads fonts (`document.fonts.load`) before setting the canvas
@@ -255,7 +259,7 @@ See [docs/design.md](docs/design.md).
   the `hero` state instead of breaking.
 - The UI exposes 24 settings from upstream; internal steering and hunger
   constants stay in the engine.
-- 0.4.1 is available as a GitHub Release tarball but not yet on the npm
+- 0.5.0 is available as a GitHub Release tarball but not yet on the npm
   registry; the repository also includes a local directory install and a
   packed `dist/*.tgz`.
 
