@@ -2,7 +2,7 @@
 
 > 让鲸群游过留白，让思绪浮出水面。
 
-DeepSeek Harness（DSH）的动态背景插件：一头座头鲸与数群小鱼在界面背后缓慢巡游。
+DeepSeek Harness（DSH）的动态背景插件：三头座头鲸与鱼群在**整个窗口**里自由巡游，而不是只在底部来回摆动。
 **全部由代码绘制，零图片素材**。空会话是满潮，进入对话自动退潮，回到空会话再从边缘游回来。
 
 [English](README.en.md) · [设计说明](docs/design.md) · [踩坑记录](docs/pitfalls.md) · [第三方声明](THIRD_PARTY_NOTICES.md)
@@ -20,8 +20,8 @@ DeepSeek Harness（DSH）的动态背景插件：一头座头鲸与数群小鱼�
 ## 特性
 
 - **纯代码渲染**：没有 PNG / WebP / GIF / MP4 运行时素材；鲸鱼、鱼群、尾迹、点阵底纹全部由 Canvas 字符与色块生成。
-- **鲸鱼 + 鱼群**：座头鲸脊线游动、摆尾、转弯；鱼群基于 Boids（分离 / 对齐 / 聚合 + 空间哈希桶），受鲸鱼与鼠标惊扰时会短暂散开再聚拢。
-- **满潮 / 退潮**：空会话 `hero` 全不透明度、全部鱼群、输入框磨砂玻璃；对话 `active` 自动降到 16% 透明度、保留 30% 鱼群、关闭磨砂，正文优先。
+- **鲸鱼 + 鱼群**：直接复用 [dsh-ascii-whales](https://github.com/Chael-Chael/dsh-ascii-whales) 的 `World` / `AsciiRenderer` 游动实现——三头座头鲸在全窗口巡游、摆尾、转弯；鱼群基于 Boids（分离 / 对齐 / 聚合 + 空间哈希桶），受鲸鱼与鼠标惊扰时会散开再聚拢。
+- **满潮 / 退潮**：空会话 `hero` 全不透明度、全部鱼群、输入框磨砂玻璃；对话 `active` 使用 dsh-quiet 的整窗退潮：降到 16% 透明度、保留 30% 鱼群、关闭磨砂，并给正文加柔光。
 - **可配置**：设置页只暴露 8 项，改完立即生效，刷新保留，带「恢复默认」。
 - **安静**：尊重 `prefers-reduced-motion`（只画一帧静态画面）；页面隐藏时暂停 `requestAnimationFrame`。
 - **干净卸载**：移除插件后删除背景层、Canvas、样式与所有 `body` 属性，界面恢复原状。
@@ -43,11 +43,11 @@ DeepSeek Harness（DSH）的动态背景插件：一头座头鲸与数群小鱼�
 dsh plugin --profile <你的 profile> add dsh-whale-tide
 ```
 
-从 GitHub Release 的 tgz 安装（0.1.0 已发布）：
+从 GitHub Release 的 tgz 安装（0.1.1 已发布）：
 
 ```bash
 dsh plugin --profile <你的 profile> add \
-  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.1.0/dsh-whale-tide-0.1.0.tgz
+  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.1.1/dsh-whale-tide-0.1.1.tgz
 ```
 
 从本地目录安装：
@@ -154,6 +154,7 @@ dsh-whale-tide/
 ├── docs/pitfalls.md      # 实际踩坑记录
 ├── docs/media/           # README 截图 / 动图（不进入 npm 包）
 ├── vendor/ascii-sharks/  # 上游 MIT 源码快照 + LICENSE
+├── vendor/dsh-ascii-whales/ # 整窗游动引擎的 MIT 许可与来源说明
 ├── test/
 ├── LICENSE
 └── THIRD_PARTY_NOTICES.md
@@ -162,12 +163,12 @@ dsh-whale-tide/
 ## 性能与实现
 
 - 固定步长引擎：`STEP = 1/60`，`MAX_STEPS = 4`，累加器追帧；掉帧时最多补 4 步，避免雪崩。
-- 网格：约 9 px 字符格；1920×876 下约 14,500 格。字符图集按「字符 + 颜色」缓存，上限 6000 条，超限清空重建。
-- 脏格重绘：每帧只重绘上一帧与当前帧内容并集的格子，其余格子不动；背景点阵与暗角绘制在离屏画布上，脏格用 `drawImage` 局部恢复。
-- 鲸鱼：脊线头节点沿水平巡游路径行进，后续节点受 `maxBend` 约束；渲染时叠加行波，形成摆尾与身体弯曲。
+- 网格：8 px 字符格；1920×876 下约 17,520 格。上游 ASCII 渲染器逐格 `fillText`，预览实测约 30 fps；`GlyphAtlas` / `InkRamp` 仍保留在引擎的 Kanji 分支中。
+- 渲染：上游 `AsciiRenderer` 每帧清屏、恢复网格背景，再绘制鲸鱼、点阵、鱼、热区与尾迹；这是为了保持 dsh-ascii-whales 的原始观感与游动细节。
+- 鲸鱼：上游 `World` 的追逐 / 巡游 / 避让 + 18 节点脊线，后续节点受 `maxBend` 约束；渲染时叠加行波，形成摆尾与身体弯曲。
 - 鱼群：Boids + `Int32Array` 头链表空间哈希；按深度 / 转向 / 警报分桶，避免每帧为每条鱼设置一次 `fillStyle`。
-- InkRamp：启动时把候选 ASCII 字符渲染到离屏 Canvas，读取 `getImageData` 的 alpha 累加得到墨量，排序后采样成 64 档查表（同样的实现可直接换汉字池）。
-- 字体：先 `document.fonts.load(...)` 再 `document.fonts.ready`，之后才创建字形图集，避免缓存 fallback 字。
+- InkRamp（引擎 Kanji 分支）：候选字渲染到离屏 Canvas，读 `getImageData` 的 alpha 累加得到墨量，排序后采样成 64 档查表；ASCII 分支直接 `fillText`。
+- 字体：引擎在 `document.fonts.load(...)` 之后才设置 canvas 字体；`prefers-reduced-motion` 时先模拟 4 秒再画一帧。
 - 页面隐藏暂停 rAF；`prefers-reduced-motion` 时模拟 4 秒后只画一帧。
 
 详见 [docs/design.md](docs/design.md)。
@@ -175,9 +176,10 @@ dsh-whale-tide/
 ## 已知限制
 
 - 鲸鱼是**风格化**的字符鲸：在低 DPI / 窄窗口下轮廓会变粗；这是字符栅格化的取舍，不是图片缩放。
+- 0.1.1 提高了鲸鱼在整窗的游动自由度；对话退潮沿用 dsh-quiet 的整层透明度 + 继承式正文柔光。
 - DSH 内部的会话 DOM 不是公开 API。相位检测只用 `data-content-phase` 与 `data-conversation-*` 属性；若未来 DSH 改动这些属性，插件会退化到「始终 hero」，不会报错或破坏页面。
 - 设置项按需求固定为 8 项；更深的自定义（字符集、尾迹强度、鲸鱼数量）保留在引擎内部，不暴露 UI。
-- 0.1.0 已发布 GitHub Release（含 tgz），但尚未发布到 npm registry；仓库内也附可直接安装的本地目录与 `dist/*.tgz`。
+- 0.1.1 已发布 GitHub Release（含 tgz），但尚未发布到 npm registry；仓库内也附可直接安装的本地目录与 `dist/*.tgz`。
 
 ## License
 
@@ -185,4 +187,4 @@ MIT © 2026 MinEagle。第三方来源与完整 MIT 声明见 [THIRD_PARTY_NOTIC
 
 - [ascii-sharks](https://github.com/stackedlol/ascii-sharks)，© 2026 drewdi，MIT（固定步长、Boids、脊线、栅格化、明暗、尾迹）
 - [dsh-quiet](https://github.com/AvenYQ/dsh-quiet)，© 2026 AvenYQ，MIT（全窗背景层、正文柔光罩、退潮思路）
-- [dsh-ascii-whales](https://github.com/Chael-Chael/dsh-ascii-whales)，MIT（DSH 设置页接线、GlyphAtlas / InkRamp 与座头鲸轮廓参考）
+- [dsh-ascii-whales](https://github.com/Chael-Chael/dsh-ascii-whales)，MIT（整窗游动引擎：World / OceanEngine / AsciiRenderer、鲸鱼与鱼群、GlyphAtlas / InkRamp）

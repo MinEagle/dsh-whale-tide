@@ -2,8 +2,8 @@
 
 > Let the pod cross the whitespace; let the thinking surface.
 
-A dynamic background plugin for DeepSeek Harness (DSH): a humpback whale and
-small fish schools drift behind the interface. **Everything is drawn in code;
+A dynamic background plugin for DeepSeek Harness (DSH): three humpback whales
+and fish schools roam the **whole window**, not a fixed strip at the bottom. **Everything is drawn in code;
 there are no runtime image assets.** An empty conversation is high tide; an
 active conversation ebbs the ocean so text stays readable; when you return to
 the empty conversation the fish swim back in from the edges.
@@ -24,13 +24,15 @@ the empty conversation the fish swim back in from the edges.
 
 - **Code-only rendering** — no PNG / WebP / GIF / MP4 runtime assets. The
   whale, fish, wake, and dotted seabed are glyphs and rectangles on a canvas.
-- **Whale + schools** — a follow-the-leader humpback spine with body waves and
-  a per-joint bend limit; Reynolds boids (separation / alignment / cohesion)
-  accelerated by an `Int32Array` spatial hash. Fish scatter around the whale
-  and the pointer, then regroup.
+- **Whale + schools** — the actual `World` / `AsciiRenderer` swimming
+  implementation from [dsh-ascii-whales](https://github.com/Chael-Chael/dsh-ascii-whales):
+  three humpbacks roam the full viewport with body waves and a per-joint bend
+  limit; Reynolds boids with an `Int32Array` spatial hash. Fish scatter around
+  the whale and the pointer, then regroup.
 - **High tide / ebb tide** — `hero`: full opacity, all fish, frosted composer.
-  `active`: opacity falls to 16%, 30% of the fish remain, the composer returns
-  to its native style, and conversation text gets a soft inherited halo.
+  `active` uses dsh-quiet's full-window ebb: opacity falls to 16%, 30% of the
+  fish remain, the composer returns to native, and conversation text gets a
+  soft inherited halo.
 - **Configurable** — exactly eight settings, applied live, saved in
   `localStorage`, with a restore-defaults button.
 - **Quiet** — respects `prefers-reduced-motion` (settles and draws one frame);
@@ -59,11 +61,11 @@ From npm (once published):
 dsh plugin --profile <your-profile> add dsh-whale-tide
 ```
 
-From the 0.1.0 GitHub Release tarball:
+From the 0.1.1 GitHub Release tarball:
 
 ```bash
 dsh plugin --profile <your-profile> add \
-  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.1.0/dsh-whale-tide-0.1.0.tgz
+  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.1.1/dsh-whale-tide-0.1.1.tgz
 ```
 
 From a local checkout:
@@ -176,6 +178,7 @@ dsh-whale-tide/
 ├── docs/pitfalls.md
 ├── docs/media/           # README images (excluded from npm)
 ├── vendor/ascii-sharks/  # Pinned MIT source snapshot + LICENSE
+├── vendor/dsh-ascii-whales/ # Engine license and provenance
 ├── test/
 ├── LICENSE
 └── THIRD_PARTY_NOTICES.md
@@ -184,15 +187,15 @@ dsh-whale-tide/
 ## Performance notes
 
 - Fixed timestep `1/60` with at most 4 catch-up steps per frame.
-- ~9 px cells; about 14,500 cells at 1920×876.
-- Glyph atlas keyed by glyph + colour, hard cap 6000 tiles.
-- Dirty-cell repaint: only cells touched in the previous or current frame are
-  redrawn; the static dot/vignette background is restored with `drawImage`.
+- 8 px cells; about 17,520 cells at 1920×876.
+- Upstream ASCII renderer: clear, restore the grid background, then draw
+  whales, dots, fish, heat and wake every frame; ~30 fps in the preview at
+  1920×876. `GlyphAtlas` / `InkRamp` remain on the engine's Kanji path.
 - Fish are bucketed by depth/turn/alarm, one `fillStyle` per bucket.
-- `InkRamp` measures an ASCII pool once at startup and builds a 64-level ramp;
-  the same class can be pointed at a Hanzi pool.
-- Fonts are loaded (`document.fonts.load` + `fonts.ready`) before the atlas is
-  built.
+- `InkRamp` (engine Kanji path) measures a glyph pool once at startup and
+  builds a 64-level ramp; the ASCII path draws with `fillText` directly.
+- The engine loads fonts (`document.fonts.load`) before setting the canvas
+  font; reduced motion settles for four seconds, then draws one frame.
 
 See [docs/design.md](docs/design.md).
 
@@ -205,7 +208,7 @@ See [docs/design.md](docs/design.md).
   the `hero` state instead of breaking.
 - The UI exposes exactly eight settings by design; deeper knobs (glyph set,
   wake strength, whale count) stay in the engine.
-- 0.1.0 is available as a GitHub Release tarball but not yet on the npm
+- 0.1.1 is available as a GitHub Release tarball but not yet on the npm
   registry; the repository also includes a local directory install and a
   packed `dist/*.tgz`.
 
@@ -219,4 +222,5 @@ MIT © 2026 MinEagle. Full attributions in
 - [dsh-quiet](https://github.com/AvenYQ/dsh-quiet), © 2026 AvenYQ, MIT
   (full-window backdrop, text glow, ebb-tide idea)
 - [dsh-ascii-whales](https://github.com/Chael-Chael/dsh-ascii-whales), MIT
-  (DSH settings wiring, GlyphAtlas / InkRamp and humpback outline reference)
+  (the full-window swimming engine: World / OceanEngine / AsciiRenderer,
+  whales, fish, GlyphAtlas / InkRamp)

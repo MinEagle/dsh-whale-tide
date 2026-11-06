@@ -1,6 +1,6 @@
 {
   "name": "dsh-whale-tide",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A code-drawn whale and fish schools drift behind DeepSeek Harness, ebbing in conversation so text stays readable.",
   "type": "module",
   "main": "lib/index.js",

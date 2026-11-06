@@ -206,36 +206,39 @@ document.querySelector('[data-conversation-content] [data-conversation-region="c
 
 CSS 的正文柔光也同时覆盖两种形式。
 
-## 16. 鲸鱼在底边“垂直俯冲”导致轮廓不可读（实际命中）
+## 16. 自己写“水平巡游”，鲸鱼只在底部固定区域来回摆动（实际命中，用户反馈）
 
-最初用“环绕 + 边缘回避”驱动鲸鱼，靠近底部时转向向上，身体垂直，画面里像
-一只蝠鲼。后来改为**水平巡游目标点 + 小幅度垂直呼吸**：
+0.1.0 为了控制轮廓，把鲸鱼头节点限制在 `cy = H * 0.77` 附近的一条水平带里，
+只做很小的垂直呼吸。结果就是用户看到的：“只会在底部固定区域内来回摆动”。
+这不是 dsh-ascii-whales 的游动实现，而是我自行简化的巡游。
+
+修复（0.1.1）：删除自写 `WTWorld` / `WTEngine`，把 dsh-ascii-whales 0.1.5
+浏览器 bundle 中的 `World` / `OceanEngine` / `AsciiRenderer` 整段内联进
+`lib/client.js`，只保留适配层：
 
 ```js
-const phase = time * 0.19 * dir + id * 2.1;
-const tx = cx + Math.sin(phase) * patrolX;
-const ty = cy + Math.sin(phase * 0.5 + 1.2) * patrolY;
-const desired = Math.atan2(ty - hy, tx - hx);
-heading += clamp(angleDiff(heading, desired), -0.065, 0.065);
+const engine = new OceanEngine(canvas, [
+  { kind: "whale", size: 1 },
+  { kind: "whale", size: 0.7 },
+  { kind: "whale", size: 0.84 },
+], speed * 0.65, dark, 1, 0.05, 300, 1, color, "ascii", false, "primary", .8, .7, .8);
 ```
 
-鲸鱼多数时间以侧面横向游动，头/尾/鳍展开，字符轮廓才读得出来。
+上游的 3 头鲸鱼围绕中心轨道巡游、追逐、避边、随机 wander，因此在整窗游动；
+不再有“底部固定带”。
 
 ## 17. 格子太粗，鲸鱼像一块蓝砖（实际命中）
 
-`cw = width / 104`（约 14 px）时，400 px 的鲸鱼只有 28×8 格，头尾细节被吃掉。
-改成 `width / 180`（约 9 px）后，鲸鱼约 45×13 格，鳍、尾、眼睛都能分辨。
-代价是格数从 4,300 涨到约 14,500；脏格重绘后预览仍保持 60 fps。
+自写引擎曾用 `cw = width / 104`（约 14 px），400 px 的鲸鱼只有 28×8 格，
+头尾细节被吃掉。改用上游 `cellSize(1,false)` 后是 8×12 px，1920×876 下约
+17,520 格，鲸鱼轮廓、鳍、尾、眼睛都清晰。代价是整屏重绘约 30 fps。
 
 ## 18. 尾迹/鱼群把整屏变成噪点（实际命中）
 
-初始 wake 沉积量太大、阈值太低，鱼群后方全是点，像脏屏幕。调整：
-
-- 鱼 wake `0.008` → `0.0035`；
-- 鲸尾 `0.05` → `0.035`；
-- 衰减 `1.35` → `1.75`；
-- 显示阈值 `0.34` → `0.5`；
-- 低能量颜色反向（低能量更淡）。
+自写引擎曾把 wake 沉积量设得过大、阈值过低，鱼群后方全是点。上游
+`AsciiRenderer` 的 wake 阈值与衰减已经调好；适配层只保留 `wake = 1`，
+不再额外覆盖。鱼群密度通过 `renderer.fishRatio` 控制，避免把 wake 也一起
+缩放到看不见。
 
 ## 19. `localStorage` 失败不能让设置页崩（代码防御）
 
@@ -306,3 +309,16 @@ sidebar=rgb(249,250,251)
 特别注意 `--dsw-alias-bg-base` 这类主题变量不能写到 `body.style` 上；一旦写到
 内联样式，清理时容易漏掉，且会覆盖宿主主题。本插件只通过带选择器的 CSS 规则
 覆盖，不修改任何内联 style。
+
+## 23. 不要为“轮廓更可控”而重写上游游动（0.1.1 的教训）
+
+这次修正的核心不是再调参数，而是**换掉实现**：
+
+- 游动、鲸鱼脊线、boids、渲染、指针交互、减少动效、页面隐藏暂停，
+  全部使用 dsh-ascii-whales 0.1.5 的实现（MIT，保留 LICENSE 与 notices）；
+- 我们只写三件事：全窗挂载层（dsh-quiet 机制）、相位/设置适配、设置页；
+- 设置里的密度/对话密度映射到 `renderer.fishRatio`，速度/颜色/主题映射到
+  `setAppearance`，不在适配层重新发明物理。
+
+以后如果还需要调整观感，优先改上游参数（`count` / `size` / `speed` /
+`bodySwing` / `turnAgility` / `tailFrequency`），不要回到自写巡游。

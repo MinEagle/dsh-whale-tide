@@ -115,15 +115,17 @@ SOFTWARE.
 
 - Project: https://github.com/Chael-Chael/dsh-ascii-whales
 - License: MIT (integration and adaptation)
-- Used for: reference implementation of the DSH settings section wiring,
-  the per-glyph-colour canvas atlas (`GlyphAtlas`), the ink-measured shading
-  ramp (`InkRamp`), and a humpback whale outline/flipper/fluke geometry
-  adapted from the same ascii-sharks lineage.
+- Used for: the **actual full-window swimming implementation** — the
+  `World` / `OceanEngine` / `AsciiRenderer` code from the 0.1.5 compiled
+  browser bundle, including boids, whale spines, glyph rasterization, wake,
+  pointer interaction, reduced-motion and visibility handling.
+- Local reference: `vendor/dsh-ascii-whales/` (LICENSE,
+  THIRD_PARTY_NOTICES.md, UPSTREAM.md). The code is inlined into
+  `lib/client.js`; no build or runtime import is required.
 - The upstream project's own `THIRD_PARTY_NOTICES.md` attributes the
   animation to stackedlol/ascii-sharks and the kanji shading approach to
-  michikusa404/ascii-kanji-sharks (MIT). Whale Tide does not use the bundled
-  fonts or the kanji glyph set from that project; it measures an ASCII pool
-  and draws with the system monospace stack.
+  michikusa404/ascii-kanji-sharks (MIT). Whale Tide uses the ASCII path only;
+  it does not bundle the upstream fonts or Kanji glyph set.
 
 ### MIT License
 

@@ -1,6 +1,6 @@
 # 设计说明
 
-本文说明鲸汐（Whale Tide）0.1.0 的架构、相位模型、渲染流水线、性能取舍与验证边界。
+本文说明鲸汐（Whale Tide）0.1.1 的架构、相位模型、渲染流水线、性能取舍与验证边界。
 需求与验收见仓库根目录 README；这里记录“为什么这样做”。
 
 ## 1. 目标与非目标
@@ -58,53 +58,55 @@ rAF(now)
 物理与动画以 60 Hz 固定步进；渲染跟随显示器。掉帧时最多补 4 步，超出就丢弃
 积压，避免“追帧雪崩”。页面隐藏时取消 rAF，恢复时重置 `last` 与累加器。
 
-### 3.2 世界
+### 3.2 世界（dsh-ascii-whales 引擎）
 
-- 鲸鱼：一条 18 节点脊线。头节点沿一条水平巡游路径行进；每节受 `maxBend = 0.1`
-  的角度约束，身体最多弯成 C，不会折返。渲染时再叠加沿脊线传播的行波，形成摆尾。
-- 鱼群：Reynolds boids，三种体型/行为参数（sardine / anchovy / silverside）。
-  每帧重建空间哈希：桶大小 = 感知半径，`Int32Array head` 头插入 + `next` 链；
-  邻域扫描 3×3 桶。
-- 鱼群行为：椭圆个人空间（横向宽、纵向窄）、盲区、警报传染、洋流（无散度流函数）、
-  软墙、指针惊吓、鲸鱼惊吓（喷泉式侧向逃逸）。不捕食，鱼不会被吃掉。
-- 潮汐种群：每条鱼有 `active / leaving / away / entering` 四态。退潮时让离中心最远的
-  鱼转向最近边缘，出界后 `away`；涨潮时从随机边缘激活 `entering`，游进内区后转
-  `active`。这样切换不会瞬移、不会整屏闪。
+游动实现直接取自 [dsh-ascii-whales](https://github.com/Chael-Chael/dsh-ascii-whales)
+0.1.5 的浏览器 bundle（MIT），保留其：
+
+- 3 头座头鲸（`World.sharkSpecs`）在整窗范围内巡游、追逐、避让边缘；不是底部固定带；
+- 18 节点脊线的 follow-the-leader 运动，逐节点 `maxBend` 限制 + 行波；
+- 鱼群的 Boids（分离 / 对齐 / 聚合 / mill / 垂直阻尼 / 软墙 / 指针惊吓），
+  `Int32Array` 头链表空间哈希；
+- 固定步长 `OceanEngine.frame`：`STEP = 1/60`、`MAX_STEPS = 4`、速度倍率影响累加器；
+- `AsciiRenderer` 的格子栅格化、蓝底白字鲸鱼、点阵、尾迹、热区、吃鱼事件与音效字；
+- `IntersectionObserver` + `visibilitychange` + `prefers-reduced-motion` 暂停/静态帧；
+- 指针 move / down 的鱼群惊吓与 splash。
+
+**为什么不用自己写的“水平巡游”**：0.1.0 曾把鲸鱼限制在底部一条水平带里，画面上
+只会在底部来回摆；即使轮廓更可控，也破坏了 dsh-ascii-whales 的“整片海”观感。
+0.1.1 改为直接复用上游 `World` / `AsciiRenderer`，只做设置与相位的适配层。
+
+适配层 `createOcean()`：
+
+```js
+const engine = new OceanEngine(canvas, [
+  { kind: "whale", size: 1 },
+  { kind: "whale", size: 0.7 },
+  { kind: "whale", size: 0.84 },
+], speed * 0.65, dark, 1, 0.05, 300, 1, color, "ascii", false, "primary", .8, .7, .8);
+```
+
+- 固定 300 条鱼的上限，`renderer.fishRatio` 控制实际显示比例，所以调密度不会重启世界；
+- `setAppearance` 更新速度 / 主题 / 主色 / 摆动 / 转向 / 摆尾；
+- `setPhase` 只改 `fishRatio`；整层透明度由 DSH 挂载层负责（dsh-quiet 的退潮）。
 
 ### 3.3 格子与字形
 
-- 单元格：`cw = clamp(round(width / 180), 6, 9)`，`ch = round(cw × 1.45)`。
-  1920×876 下约 212×70 ≈ 14,800 格。
-- 连续坐标 → `floor(x / cw)`、`floor(y / ch)` → 一维索引。
-- 两级缓冲：`flag: Uint8Array`（BODY / EDGE / FIN / RIDGE / EYE / FLUKE / MARK / WAKE）
-  与 `shade: Float32Array`。颜色与字符由 flag + shade + hash key 决定：
-  - BODY：`InkRamp.pick(1 - shade)`，阴影处选重字，亮部选稀疏字；
-  - RIDGE / EYE / MARK / FIN / FLUKE：各自字符集；
-  - EDGE：按覆盖率选重/轻描边字符，并用亮色填充形成清晰轮廓；
-  - WAKE：按能量选 `.` / `~` / `=`。
-- GlyphAtlas：每个「字符 + 颜色」一张离屏 canvas，`drawImage` 贴到主画布；
-  `cellPx` 变化时清空；超过 6000 条时清空重建。颜色先量化到 12/6/5 档，
-  避免缓存无界增长。
-- InkRamp：启动时把 ASCII 候选池逐个画到 64×64 离屏 canvas，读 `getImageData`
-  的 alpha 总和作为墨量，排序后采样 64 档。候选池是常量，换成汉字池即可复用。
-- 字体：`document.fonts.load("600 16px <computed stack>")` → `document.fonts.ready`
-  → 再建 InkRamp 与 GlyphAtlas。若跳过这一步，图集缓存的是 fallback 字形。
+- `cellSize(1,false)`：8 px × 12 px 的字符格；1920×876 下约 212×70 = 17,520 格。
+- `AsciiRenderer` 每帧清屏、恢复网格背景，再逐格绘制：
+  - 身体/鳍/尾/眼/斑纹用 `sharkFlag` 与 `sharkShade` 选择色块与字符；
+  - 鲸鱼色块填充 + 深色/浅色字形，保留 ascii-sharks 的“蓝块白字”质感；
+  - 鱼逐条吸附一格、按亮度分桶；点阵按 bucket 批量绘制，减少 `fillStyle` 切换；
+  - 尾迹/热区/事件字单独图层。
+- `GlyphAtlas` / `InkRamp` 仍在引擎内（Kanji 分支使用）；ASCII 模式使用
+  `ctx.fillText` 的原生字形，与参考实现一致。
 
-### 3.4 脏格重绘
+### 3.4 全屏渲染
 
-每帧：
-
-1. 把上一帧 `touched` 的格子标记为 dirty，并清空这些格子的状态；
-2. 把当前帧写过的格子加入 `touched`；
-3. 对 dirty 并集逐格：
-   - 从离屏背景画布 `drawImage` 恢复该格（底色 + 点阵 + 暗角）；
-   - 画可选色块填充；
-   - 画字形图集贴图。
-4. `prev = touched`。
-
-背景（底色、点阵、暗角）只在 resize / 主题/主色变化时重画一次。这样不做全屏
-`clearRect + 7000 次 drawImage`，也满足“脏格重绘”的要求。代价是每格需要一次
-背景贴图，但比全量重绘便宜，且随实体数量而不是屏幕面积增长。
+0.1.1 沿用上游的整屏重绘：每帧 `clearRect` → 绘制离屏网格 → 逐层画鲸鱼 / 点阵 /
+鱼 / 热区 / 尾迹。原因是点阵会随时间闪烁、鲸鱼色块几乎覆盖全屏，脏格重绘的并集
+接近全屏，收益很小；整屏路径更容易保持与 dsh-ascii-whales 完全一致的观感。
+在 1920×876、17,520 格的预览中实测约 30 fps；设置页与对话退潮不会降低刷新率。
 
 ### 3.5 颜色
 
@@ -253,14 +255,13 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
 
 | 决策 | 取舍 |
 | --- | --- |
-| 约 9 px 字符格 | 鲸鱼轮廓更细、更像鲸；代价是格数约 1.5 万。实测 1920×876 预览 60 fps |
-| 脏格重绘 | 每格两次 `drawImage`；比全屏字形重绘便宜，且随实体数增长 |
-| 字符图集 6000 上限 | 换主色/主题时可能清空重建一次；避免长期运行内存无界 |
-| 每帧空间哈希重建 | O(n)，但实现简单、缓存友好；n ≤ 300 |
-| 鱼群最多 300 且按深度分桶 | 限制绘制状态切换；对话中只保留 30% |
-| 鲸鱼单条 | 保证轮廓可读和性能；引擎支持多条，但 0.1.0 只放一条 |
-| 单文件 client.js | 无构建、无 chunk；代价是 engine 与 preview 有两份代码，靠 review 与同源生成流程保持一致 |
-| 设置只暴露 8 项 | 降低认知负担；高级参数留在引擎内部 |
+| 直接复用 dsh-ascii-whales 引擎 | 观感、游动、鲸鱼细节与参考完全一致；代价是整屏重绘，约 30 fps |
+| 8 px 字符格 / 17,520 格 | 鲸鱼细节和点阵质感接近参考；不适合更低端设备 |
+| 固定 300 条鱼 + `fishRatio` | 调密度/退潮即时生效，不重启世界；代价是死鱼也参与模拟 |
+| 3 头鲸鱼 | 与 dsh-ascii-whales 默认一致；保证整窗都有主体 |
+| 全窗口 fixed 层 + 主题表面透明 | 满足 dsh-quiet 的整窗退潮；需要按 DSH DOM 作用域覆盖 token |
+| 8 项设置 | 只暴露关键参数；上游的 19 项参数保留为引擎常量 |
+| 单文件 client.js | 无构建；引擎代码内联，文件约 3.2k 行 |
 
 ## 6. 验证与边界
 
@@ -268,7 +269,7 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
 
 - `npm test`：16 项通过（settings + manifest）。
 - 独立预览：Chrome 打开 `tools/preview.html`，hero/active、浅/深、减少动效、设置面板均可运行；
-  1920×876 下 60 fps；生成的截图与 GIF 在 `docs/media/`。
+  1920×876 下约 30 fps；生成的新截图与 GIF 在 `docs/media/`。
 - 浏览器 harness：最小 `__ModuleLoader__` + `ctx` 加载 `lib/client.js`，验证
   `id === package name`、背景层/Canvas 挂载、`hero → active` 相位与 0.16 透明度、
   卸载后无 layer / body 属性残留、无控制台错误。
@@ -276,7 +277,7 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
   `Slots.listSubTree("settings.section")` 显示 `dsh-whale-tide` occupant 且
   `active: true`。
 - 真实 GUI（CDP 已认证页面）验证：
-  - 空会话：`body` 四个 data 属性、背景层 1920×876、canvas 有非白像素、
+  - 空会话：`body` 四个 data 属性、背景层 1920×876、canvas 有 3 头鲸鱼与鱼群、
     侧栏 `rgba(255,255,255,.55)` + `blur(10px)`、输入框 `::before` 磨砂；
   - 打开已有会话后：chat 节点 `data-content-phase="active"`、body 相位同步为
     `active`、层不透明度 0.16、输入框磨砂消失、正文 `text-shadow` 生效；
@@ -288,8 +289,8 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
     再开启后层与属性恢复；
   - 关闭插件：layer / canvas / style / body 属性全部消失，body 与侧栏恢复原生底色；
     再启用后 layer、canvas、设置页注册恢复。
-- 0.1.0 已推送 GitHub（`MinEagle/dsh-whale-tide`）并创建 `v0.1.0` Release，
-  附件为 `dsh-whale-tide-0.1.0.tgz`；npm registry 发布**未执行**：本机 npm 未登录
+- 0.1.1 推送 GitHub（`MinEagle/dsh-whale-tide`）并创建 `v0.1.1` Release，
+  附件为 `dsh-whale-tide-0.1.1.tgz`；npm registry 发布**未执行**：本机 npm 未登录
   （`npm whoami` 返回 ENEEDAUTH）。配置 npm token 后执行 `npm publish --access public`
   即可补上。
 
