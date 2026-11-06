@@ -1,6 +1,6 @@
 # 设计说明
 
-本文说明鲸汐（Whale Tide）0.1.1 的架构、相位模型、渲染流水线、性能取舍与验证边界。
+本文说明鲸汐（Whale Tide）0.2.0 的架构、相位模型、渲染流水线、性能取舍与验证边界。
 需求与验收见仓库根目录 README；这里记录“为什么这样做”。
 
 ## 1. 目标与非目标
@@ -250,6 +250,47 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
   store 订阅；删除 `dsh-whale-tide`、`dsh-whale-tide-scheme`、
   `dsh-whale-tide-phase` 三个 body 属性；`layer.remove()`。
   浏览器 harness 已验证卸载后 layer 不存在、body 属性为 null、底色恢复。
+
+### 4.7 设置模型（24 项）
+
+设置分两层：
+
+- **上游参数**（20 项）与 dsh-ascii-whales 0.1.5 完全同名同范围：
+  `count / species / size / bodySwing / turnAgility / tailFrequency /
+  speed / color / colorfulShimmer / eyeColor / wake / gridScale /
+  gridOpacity / fishCount / glyphMode / glass / blur / glassOpacity`（另有
+  本插件的 `enabled / opacity / density / conversationOpacity /
+  conversationDensity / followTheme`）。
+- **生效方式**分两类：
+  - `count / species / size / fishCount` 需要重建 `World`，适配层 `build()`；
+  - 其余通过 `setAppearance()`、`renderer.fishRatio`、`renderer.gridScale +
+    resize()`、CSS 变量（`--dshwt-blur`、`--dshwt-glass-opacity`）实时更新。
+
+`lib/settings.js` 是 Node 侧规范副本（测试用），`lib/client.js` 内联同一份
+常量；`test/manifest.test.js` 断言两边覆盖同一组控件，且 `locale/*.json`
+为每个控件提供标签与提示。
+
+### 4.8 深/浅色
+
+主题来源按优先级读取：
+
+1. `ctx.get("theme").getTheme().active`（`colorScheme` 或主题 id）；
+2. `html[data-ds-theme-source]`（0.2.x 实际使用的属性）；
+3. `body[data-ds-dark-theme]`；
+4. `data-theme` / `data-color-scheme` / `.dark` class；
+5. `getComputedStyle(html).colorScheme`；
+6. `prefers-color-scheme`。
+
+**不能**用 body 背景判断：本插件自己把 body 铺成 `#fff` / `#151517`，会污染判断
+（这是 0.1.1 在深色下失效的原因之一）。
+
+两套属性分开：
+
+- `data-dsh-whale-tide-ui`：宿主主题，控制侧栏玻璃、正文柔光、输入框磨砂；
+- `data-dsh-whale-tide-scheme`：海洋配色（`followTheme` 关闭时被冻结）。
+
+背景底色、侧栏 token、正文 text-shadow、磨砂底色、画布调色板都按这两个属性
+分浅/深两套；切换时只更新属性与引擎 `setAppearance`，不重建引擎。
 
 ## 5. 性能取舍
 

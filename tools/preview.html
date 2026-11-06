@@ -1,4 +1,3 @@
-<!-- Ocean engine adapted from dsh-ascii-whales 0.1.5 (MIT); see THIRD_PARTY_NOTICES.md. -->
 <!doctype html>
 <html lang="zh-CN" data-theme="light">
 <head>
@@ -12,15 +11,17 @@
     --line:#e8eaee; --line2:#dfe3ea; --bubble:#eff3ff; --chip:#f3f5f8;
     --accent:#4d6bfe; --accent-soft:#e9edff; --shadow:0 4px 24px rgba(31,35,41,.06);
     --sidebar:rgba(255,255,255,.55); --glass:rgba(255,255,255,.46); --glass-line:rgba(255,255,255,.65);
-    --composer-bg:rgba(255,255,255,.76); --composer-line:#e8eaee; --hero-veil:rgba(255,255,255,.34);
-    --radius:16px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --composer-bg:rgba(255,255,255,.76); --composer-line:#e8eaee;
+    --hero-veil:rgba(255,255,255,.34);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
   }
   html[data-theme="dark"]{
-    --bg:#141518; --bg2:#1b1c20; --ink:#e6e7ea; --ink2:#a6acb6; --ink3:#7b818c;
-    --line:#2a2c32; --line2:#34363d; --bubble:#1e2738; --chip:#22242a;
-    --accent:#7f9cff; --accent-soft:#1d2740; --shadow:0 4px 24px rgba(0,0,0,.35);
-    --sidebar:rgba(20,21,24,.58); --glass:rgba(24,25,30,.46); --glass-line:rgba(255,255,255,.12);
-    --composer-bg:rgba(27,28,32,.78); --composer-line:#2c2e35; --hero-veil:rgba(20,21,24,.34);
+    --bg:#151517; --bg2:#1b1c20; --ink:#f2f3f5; --ink2:#a9aeb8; --ink3:#7f858f;
+    --line:#2a2b30; --line2:#34363d; --bubble:#1e2738; --chip:#232429;
+    --accent:#8aa2ff; --accent-soft:#202840; --shadow:0 4px 24px rgba(0,0,0,.42);
+    --sidebar:rgba(21,21,23,.62); --glass:rgba(24,24,26,.5); --glass-line:rgba(255,255,255,.12);
+    --composer-bg:rgba(28,28,31,.8); --composer-line:#2c2e35;
+    --hero-veil:rgba(21,21,23,.34);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -29,16 +30,12 @@
     font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
     overflow:hidden; -webkit-font-smoothing:antialiased;
   }
-  html[data-theme="dark"] body{background:#141518}
-  button,input{font:inherit}
-  button{color:inherit}
-
-  /* ── 背景层：fixed，铺满窗口，永远不接指针 ─────────────────────── */
-  .backdrop{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:var(--bg);opacity:1;transition:opacity .55s cubic-bezier(.22,1,.36,1)}
+  button,input,select{font:inherit;color:inherit}
+  .backdrop{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:#fff;transition:opacity .55s cubic-bezier(.22,1,.36,1)}
+  html[data-theme="dark"] .backdrop{background:#151517}
   .backdrop[data-enabled="0"]{opacity:0!important}
-  .backdrop canvas{display:block;width:100%;height:100%;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
-
-  /* ── 界面骨架 ─────────────────────────────────────────────────── */
+  .backdrop canvas{display:block;width:100%;height:100%;font-family:var(--mono)}
+  .backdrop[data-glyph="hanzi"] canvas{font-family:"Songti SC","Noto Serif SC","Source Han Serif SC",serif}
   .app{position:relative;z-index:1;height:100%;display:grid;grid-template-columns:252px 1fr;grid-template-rows:56px 1fr}
   .sidebar{grid-row:1/3;border-right:1px solid var(--line);background:var(--sidebar);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:16px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
   .brand{display:flex;align-items:center;gap:10px;padding:6px 10px 20px;font-weight:650;letter-spacing:.2px}
@@ -49,114 +46,93 @@
   .nav:hover{background:var(--chip)}
   .nav.on{background:var(--accent-soft);color:var(--accent)}
   .nav .ico{width:18px;height:18px;display:grid;place-items:center;opacity:.85}
-  .nav .ico svg{width:16px;height:16px}
   .side-label{margin:22px 12px 6px;font-size:11px;letter-spacing:.1em;color:var(--ink3);text-transform:uppercase}
   .ws{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:9px;color:var(--ink2);cursor:pointer}
-  .ws:hover{background:var(--chip)}
   .ws .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);opacity:.7}
   .sidebar-foot{margin-top:auto;padding:12px;border-top:1px solid var(--line);color:var(--ink3);font-size:11px;line-height:1.6}
-
   .topbar{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:0 26px;background:var(--glass);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
   .crumb{display:flex;align-items:center;gap:8px;color:var(--ink2);font-size:13px;min-width:0}
   .crumb b{color:var(--ink);font-weight:600}
-  .crumb .sep{color:var(--ink3)}
   .top-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
   .pill{border:1px solid var(--line2);background:var(--bg);border-radius:999px;padding:5px 11px;font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:6px}
   .pill .live{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
-
   .stage{position:relative;min-width:0;overflow:auto;scrollbar-width:thin}
   .stage[data-phase="hero"] .thread{display:none}
   .stage[data-phase="active"] .hero{display:none}
-
-  /* 空会话 hero */
   .hero{min-height:calc(100vh - 56px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8vh 28px 15vh;position:relative;isolation:isolate}
   .hero::before{content:"";position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:min(780px,92vw);height:440px;z-index:-1;pointer-events:none;background:radial-gradient(closest-side,var(--hero-veil) 0%,var(--hero-veil) 38%,rgba(255,255,255,0) 74%)}
-  html[data-theme="dark"] .hero::before{background:radial-gradient(closest-side,rgba(20,21,24,.74) 0%,rgba(20,21,24,.74) 38%,rgba(20,21,24,0) 74%)}
   .hero>*{position:relative;z-index:1}
   .hero .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);margin-bottom:18px}
   .hero h1{margin:0;font-size:clamp(28px,3.4vw,42px);line-height:1.25;letter-spacing:-.02em;font-weight:650;color:var(--ink)}
   .hero h1 em{font-style:normal;color:var(--accent)}
-  .hero h1,.hero p,.hero .eyebrow,.hero .hint{text-shadow:0 0 1px rgba(255,255,255,.95),0 0 18px rgba(255,255,255,.9),0 0 42px rgba(255,255,255,.55)}
-  html[data-theme="dark"] .hero h1,html[data-theme="dark"] .hero p,html[data-theme="dark"] .hero .eyebrow,html[data-theme="dark"] .hero .hint{text-shadow:0 0 1px rgba(20,21,24,.95),0 0 18px rgba(20,21,24,.9),0 0 42px rgba(20,21,24,.55)}
   .hero p{max-width:540px;margin:15px 0 0;color:var(--ink2);font-size:15px}
   .chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:32px;max-width:640px}
-  .chip{border:1px solid var(--line2);background:var(--glass);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--ink2);cursor:pointer;transition:transform .18s ease,border-color .18s ease}
-  .chip:hover{transform:translateY(-1px);border-color:var(--accent);color:var(--ink)}
+  .chip{border:1px solid var(--line2);background:var(--glass);backdrop-filter:blur(6px);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--ink2);cursor:pointer}
   .hero .hint{margin-top:22px;font-size:12px;color:var(--ink3)}
-
-  /* 对话 */
   .thread{width:min(760px,calc(100% - 72px));margin:0 auto;padding:36px 0 200px}
   .question{display:flex;justify-content:flex-end;margin:0 0 28px}
   .question .bubble{max-width:78%;background:var(--bubble);border-radius:18px 18px 4px 18px;padding:12px 16px;color:var(--ink);box-shadow:var(--shadow);position:relative;isolation:isolate}
   .answer{display:flex;flex-direction:column;gap:16px;min-width:0}
   .answer-head{display:flex;align-items:center;gap:9px;color:var(--ink3);font-size:12px;margin-bottom:-2px}
-  .answer-head .orb{width:18px;height:18px;border-radius:50%;background:linear-gradient(145deg,var(--accent),#9bbcff);color:#fff;display:grid;place-items:center;font-size:9px;font-weight:700;letter-spacing:-.02em}
+  .answer-head .orb{width:18px;height:18px;border-radius:50%;background:linear-gradient(145deg,var(--accent),#9bbcff);color:#fff;display:grid;place-items:center;font-size:9px;font-weight:700}
   .text{position:relative;isolation:isolate;min-width:0}
   .text::before{content:"";position:absolute;inset:-7px -12px;z-index:-1;border-radius:14px;background:rgba(255,255,255,.70);box-shadow:0 0 22px 12px rgba(255,255,255,.62);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:none}
-  html[data-theme="dark"] .text::before{background:rgba(20,21,24,.72);box-shadow:0 0 22px 12px rgba(20,21,24,.64)}
+  html[data-theme="dark"] .text::before{background:rgba(21,21,23,.74);box-shadow:0 0 22px 12px rgba(21,21,23,.66)}
   .stage[data-phase="hero"] .text::before{display:none}
+  .hero h1,.hero p,.hero .eyebrow,.hero .hint{text-shadow:0 0 2px rgba(255,255,255,.7),0 0 16px rgba(255,255,255,.5)}
+  html[data-theme="dark"] .hero h1,html[data-theme="dark"] .hero p,html[data-theme="dark"] .hero .eyebrow,html[data-theme="dark"] .hero .hint{text-shadow:0 0 2px rgba(12,12,15,.85),0 0 18px rgba(12,12,15,.65)}
   .text p{margin:0 0 10px}
   .text p:last-child{margin-bottom:0}
   .text ul{margin:8px 0 0;padding-left:20px}
   .text li{margin:3px 0}
-  .text b{font-weight:650}
   .text code{font-family:var(--mono);font-size:12.5px;background:var(--chip);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
   .aside-note{border-left:2px solid var(--accent);padding:2px 0 2px 13px;color:var(--ink2);font-size:13px}
-
   .composer{position:fixed;left:calc(252px + (100vw - 252px)/2);bottom:28px;transform:translateX(-50%);width:min(760px,calc(100vw - 252px - 64px));z-index:2}
-  .composer .box{border:1px solid var(--composer-line);border-radius:20px;padding:13px 15px;display:flex;align-items:center;gap:12px;background:var(--composer-bg);box-shadow:0 12px 36px rgba(31,35,41,.07);transition:background .3s ease,backdrop-filter .3s ease}
-  .stage[data-phase="hero"] .composer .box{background:var(--glass);backdrop-filter:blur(14px) saturate(1.15);-webkit-backdrop-filter:blur(14px) saturate(1.15);border-color:var(--glass-line);box-shadow:0 18px 50px rgba(31,35,41,.10),inset 0 1px 0 rgba(255,255,255,.5)}
-  html[data-theme="dark"] .stage[data-phase="hero"] .composer .box{box-shadow:0 18px 50px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08)}
+  .composer .box{border:1px solid var(--composer-line);border-radius:20px;padding:13px 15px;display:flex;align-items:center;gap:12px;background:var(--composer-bg);box-shadow:0 12px 36px rgba(31,35,41,.07)}
+  .stage[data-phase="hero"] .composer .box{background:rgba(255,255,255,var(--dshwt-glass-opacity,.45));backdrop-filter:blur(var(--dshwt-blur,14px)) saturate(1.12);-webkit-backdrop-filter:blur(var(--dshwt-blur,14px)) saturate(1.12);border-color:var(--glass-line)}
+  html[data-theme="dark"] .stage[data-phase="hero"] .composer .box{background:rgba(24,24,26,var(--dshwt-glass-opacity,.45))}
+  .stage[data-phase="hero"][data-glass="0"] .composer .box{background:var(--composer-bg);backdrop-filter:none;-webkit-backdrop-filter:none;border-color:var(--composer-line)}
   .composer .box .ph{color:var(--ink3);flex:1;font-size:14px}
   .composer .box .kbd{font-size:11px;color:var(--ink3);border:1px solid var(--line2);border-radius:6px;padding:1px 6px;font-family:var(--mono)}
   .send{width:28px;height:28px;border-radius:50%;background:var(--accent);display:grid;place-items:center;color:#fff;flex:none}
   .send svg{width:14px;height:14px}
-
-  /* ── HUD / 调参 ────────────────────────────────────────────────── */
   .hud{position:fixed;right:16px;bottom:16px;z-index:30;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;align-items:center;font-size:12px}
   .hud button{background:var(--bg);border:1px solid var(--line2);border-radius:9px;padding:6px 10px;cursor:pointer;color:var(--ink2);box-shadow:var(--shadow)}
   .hud button:hover{background:var(--chip);color:var(--ink)}
   .hud button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-  #stats{font-family:var(--mono);font-size:10.5px;color:var(--ink3);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:5px 8px;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .panel{position:fixed;right:16px;bottom:58px;z-index:40;width:316px;max-height:calc(100vh - 90px);overflow:auto;background:var(--bg);border:1px solid var(--line2);border-radius:16px;box-shadow:0 24px 60px rgba(20,24,32,.18);padding:16px;display:none}
+  #stats{font-family:var(--mono);font-size:10.5px;color:var(--ink3);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:5px 8px;max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .panel{position:fixed;right:16px;bottom:58px;z-index:40;width:352px;max-height:calc(100vh - 90px);overflow:auto;background:var(--bg);border:1px solid var(--line2);border-radius:16px;box-shadow:0 24px 60px rgba(20,24,32,.24);padding:16px;display:none}
   .panel.open{display:block}
   .panel h3{margin:0 0 3px;font-size:14px;font-weight:650}
-  .panel .sub{margin:0 0 14px;color:var(--ink3);font-size:11.5px;line-height:1.55}
-  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line)}
+  .panel .sub{margin:0 0 12px;color:var(--ink3);font-size:11.5px;line-height:1.55}
+  .grp{margin:14px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--line)}
   .row:first-of-type{border-top:0}
-  .row .name{color:var(--ink2);font-size:12.5px;display:flex;align-items:center;gap:7px}
-  .row .val{font-family:var(--mono);font-size:11px;color:var(--ink3);min-width:38px;text-align:right}
+  .row .name{color:var(--ink2);font-size:12.5px}
+  .row .val{font-family:var(--mono);font-size:11px;color:var(--ink3);min-width:44px;text-align:right}
   .row input[type=range]{width:132px;accent-color:var(--accent);height:18px}
-  .row .rangebox{display:flex;align-items:center;gap:7px}
-  .switch{position:relative;width:38px;height:22px;border-radius:999px;background:var(--line2);border:0;cursor:pointer;flex:none;transition:background .18s}
-  .switch::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .18s}
+  .row select{font-size:12px;padding:3px 6px;border-radius:7px;border:1px solid var(--line2);background:var(--bg);max-width:150px}
+  .row .rangebox,.row .colorline{display:flex;align-items:center;gap:7px}
+  .row input[type=color]{width:28px;height:24px;padding:0;border:1px solid var(--line2);border-radius:6px;background:transparent;cursor:pointer}
+  .switch{position:relative;width:38px;height:22px;border-radius:999px;background:var(--line2);border:0;cursor:pointer;flex:none}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
   .switch[aria-checked="true"]{background:var(--accent)}
   .switch[aria-checked="true"]::after{transform:translateX(16px)}
-  .colorline{display:flex;align-items:center;gap:7px}
-  .colorline input[type=color]{width:28px;height:24px;padding:0;border:1px solid var(--line2);border-radius:6px;background:transparent;cursor:pointer}
-  .colorline .hex{font-family:var(--mono);font-size:11px;color:var(--ink3)}
   .panel .actions{display:flex;gap:8px;margin-top:14px}
   .panel .actions button{flex:1;border:1px solid var(--line2);background:var(--bg);border-radius:9px;padding:8px 10px;cursor:pointer;color:var(--ink2)}
   .panel .actions button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
   .panel .save{min-height:16px;margin-top:8px;font-size:11px;color:var(--ink3)}
-
   @media (max-width:900px){
     .app{grid-template-columns:0 1fr}
     .sidebar{display:none}
-    .composer{left:calc(50vw);width:calc(100vw - 32px)}
+    .composer{left:50vw;width:calc(100vw - 32px)}
     .thread{width:calc(100% - 36px)}
   }
-  @media (prefers-reduced-motion:reduce){
-    *{scroll-behavior:auto!important}
-    .backdrop{transition:none}
-    .chip,.switch,.switch::after{transition:none}
-  }
-  html[data-reduced="1"] .backdrop{transition:none}
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.backdrop{transition:none}}
 </style>
 </head>
 <body>
 <div class="backdrop" id="backdrop" data-enabled="1"><canvas id="ocean"></canvas></div>
-
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -170,34 +146,31 @@
     <div class="side-label">工作区</div>
     <div class="ws"><span class="dot"></span>默认工作区</div>
     <div class="ws"><span class="dot" style="opacity:.35"></span>背景插件开发</div>
-    <div class="sidebar-foot">预览页 · 背景完全由代码绘制<br>无图片素材</div>
+    <div class="sidebar-foot">预览页 · 引擎取自 dsh-ascii-whales<br>无图片素材</div>
   </aside>
-
   <header class="topbar">
-    <div class="crumb"><b>新对话</b><span class="sep">/</span><span>默认工作区</span></div>
+    <div class="crumb"><b>新对话</b><span>/</span><span>默认工作区</span></div>
     <div class="top-actions"><span class="pill"><span class="live"></span>本地</span><span class="pill">DeepSeek V4</span></div>
   </header>
-
-  <main class="stage" id="stage" data-phase="hero">
+  <main class="stage" id="stage" data-phase="hero" data-glass="1">
     <section class="hero" id="hero">
       <div class="eyebrow">DeepSeek Harness · 独立预览</div>
       <h1>让鲸群游过<em>留白</em>，<br>让思绪浮出水面。</h1>
-      <p>纯代码绘制的动态背景：一头座头鲸与数群小鱼在界面背后缓慢巡游。进入对话时自动退潮，保证正文清晰。</p>
+      <p>引擎与 DSH 插件完全一致：三头座头鲸与鱼群在整窗巡游，进入对话时整层退潮。</p>
       <div class="chips">
         <span class="chip">帮我梳理今天的重点</span>
         <span class="chip">写一个定时任务</span>
         <span class="chip">解释这段代码</span>
         <span class="chip">整理成一张表</span>
       </div>
-      <div class="hint">试试右下角的「对话中」与「调参」</div>
+      <div class="hint">右下角：对话中 / 主题 / 减少动效 / 调参</div>
     </section>
-
-    <section class="thread" id="thread" aria-hidden="true">
+    <section class="thread" id="thread">
       <div class="question"><div class="bubble">帮我整理一下今天的工作重点，按优先级排一下。</div></div>
       <div class="answer">
         <div class="answer-head"><span class="orb">DS</span><span>今天 15:04 · 已深度思考</span></div>
         <div class="text">
-          <p>可以先把今天拆成三块：<b>必须完成</b>、<b>推进中</b>、<b>可以顺延</b>。优先处理有外部依赖、且今天下班前必须给出结果的事项；其余按投入产出比排序。</p>
+          <p>可以先把今天拆成三块：<b>必须完成</b>、<b>推进中</b>、<b>可以顺延</b>。优先处理有外部依赖、且今天下班前必须给出结果的事项。</p>
           <p>从你当前的上下文看，最值得先做的是把背景插件的验收流程跑通，因为设置面板、退潮逻辑和卸载清理都依赖它。</p>
         </div>
         <div class="text">
@@ -205,19 +178,14 @@
             <li><b>P0</b> · 把插件装进本地 DSH，确认空会话和对话中都能看到背景。</li>
             <li><b>P1</b> · 对话中检查正文对比度与输入框磨砂是否按预期关闭。</li>
             <li><b>P2</b> · 整理 README 与第三方声明，跑一次打包检查。</li>
-            <li><b>P3</b> · 如果还有时间，再补一版更细的鲸鱼纹理。</li>
           </ul>
         </div>
         <div class="text">
-          <p>一个实用的判断标准：如果一件事今天不做，会不会阻塞别人？会，就提前；不会，就按精力安排。把最清醒的一小时留给需要连续思考的任务，碎片时间再处理沟通和整理。</p>
-          <p class="aside-note">背景里的鲸群会在你阅读时保持低透明度，文字区域始终有一层柔光罩，长时间阅读也不会被游动干扰。</p>
-        </div>
-        <div class="text">
-          <p>如果你愿意，我还可以把这三块直接变成可勾选的清单，并预估每项需要的时间。</p>
+          <p>一个实用的判断标准：如果一件事今天不做，会不会阻塞别人？会，就提前；不会，就按精力安排。</p>
+          <p class="aside-note">背景里的鲸群会在你阅读时保持低透明度，文字区域始终有一层柔光罩。</p>
         </div>
       </div>
     </section>
-
     <div class="composer">
       <div class="box">
         <span class="ph">描述你想要构建的内容，或提出一个问题…</span>
@@ -227,7 +195,6 @@
     </div>
   </main>
 </div>
-
 <div class="hud">
   <span id="stats">启动中…</span>
   <button id="btnPhase">对话中</button>
@@ -235,18 +202,23 @@
   <button id="btnMotion">减少动效</button>
   <button id="btnPanel">调参</button>
 </div>
-
 <aside class="panel" id="panel">
   <h3>鲸汐 · 调参</h3>
-  <p class="sub">实时写入 localStorage；刷新保留。这里是独立预览，不依赖 DSH。</p>
+  <p class="sub">与插件设置页同一套参数，实时写入 localStorage。</p>
   <div id="controls"></div>
   <div class="actions"><button id="btnReset">恢复默认</button><button class="primary" id="btnClose">完成</button></div>
   <div class="save" id="saveState"></div>
 </aside>
 
 <script>
-
-/* ===================== ocean engine (dsh-ascii-whales, MIT) ===================== */
+/* =====================================================================
+     * Ocean engine — extracted from dsh-ascii-whales 0.1.5 (MIT)
+     *
+     * dsh-ascii-whales vendors ascii-sharks (MIT, © 2026 drewdi) and
+     * ascii-kanji-sharks (MIT, © 2026 michikusa404). This section keeps the
+     * upstream full-window swimming, boids, whale spine/renderer and glyph
+     * atlas; the adapter below only maps Whale Tide's settings and phase.
+     * ===================================================================*/
 // vendor/ascii-sharks/cells.ts
 function cellSize(scale, square) {
   const cw = Math.max(1, Math.round(8 * scale));
@@ -2510,154 +2482,354 @@ var OceanEngine = class {
   };
 };
 
-/* ── adapter: full-window ocean on the dsh-ascii-whales engine ───────── */
 
-function createOcean(canvas, options) {
-  const opts = options || {};
-  const settings = Object.assign({}, opts.settings || {});
-  const state = {
-    phase: opts.phase === "active" ? "active" : "hero",
-    dark: opts.theme === "dark",
-  };
-  const whaleSpecs = [
-    { kind: "whale", size: 1 },
-    { kind: "whale", size: 0.7 },
-    { kind: "whale", size: 0.84 },
-  ];
-  // A fixed maximum population keeps density changes instant: the renderer
-  // shows a stable subset instead of rebuilding (and restarting) the world.
-  const engine = new OceanEngine(
-    canvas,
-    whaleSpecs,
-    (Number(settings.speed) || 1) * 0.65,
-    state.dark,
-    1,
-    0.05,
-    300,
-    1,
-    settings.color || "#4d6bfe",
-    "ascii",
-    false,
-    "primary",
-    0.8,
-    0.7,
-    0.8,
-  );
 
-  const onStats = typeof opts.onStats === "function" ? opts.onStats : null;
-  const stats = { frames: 0, last: performance.now(), fps: 0 };
-  const originalRender = engine.render.bind(engine);
-  engine.render = (dt) => {
-    originalRender(dt);
-    stats.frames++;
-  };
+    /* =====================================================================
+     * Settings model (upstream dsh-ascii-whales options + tide controls)
+     * ===================================================================*/
+    const NS = "whale-tide";
+    const STORAGE_KEY = "dsh-whale-tide:v1";
+    const SCHEME_KEY = "dsh-whale-tide:scheme";
 
-  function currentRatio() {
-    const density = clamp(Number(settings.density) || 0, 0, 1);
-    const phaseFactor = state.phase === "active"
-      ? clamp(Number(settings.conversationDensity) || 0, 0, 1)
-      : 1;
-    return density * phaseFactor;
-  }
+    const DEFAULTS = {
+      // ── tide (this plugin) ────────────────────────────────────────────
+      enabled: true,
+      density: 0.65,
+      opacity: 1,
+      conversationOpacity: 0.16,
+      conversationDensity: 0.3,
+      followTheme: true,
+      // ── whale ─────────────────────────────────────────────────────────
+      count: 3,
+      species: "humpback",
+      size: 1.2,
+      bodySwing: 0.8,
+      turnAgility: 0.7,
+      tailFrequency: 0.8,
+      // ── ocean ─────────────────────────────────────────────────────────
+      speed: 0.65,
+      color: "#4d6bfe",
+      colorfulShimmer: false,
+      eyeColor: "primary",
+      wake: 1,
+      gridScale: 1,
+      gridOpacity: 0.05,
+      fishCount: 170,
+      glyphMode: "ascii",
+      // ── frosted composer ──────────────────────────────────────────────
+      glass: true,
+      blur: 14,
+      glassOpacity: 0.45,
+    };
 
-  function applyAppearance() {
-    engine.setAppearance(
-      (Number(settings.speed) || 1) * 0.65,
-      state.dark,
-      0.05,
-      1,
-      settings.color || "#4d6bfe",
-      false,
-      "primary",
-      0.8,
-      0.7,
-      0.8,
-    );
-    engine.renderer.fishRatio = currentRatio();
-  }
+    /** [min, max, step] — upstream ranges, plus this plugin's tide ratios. */
+    const RANGES = {
+      density: [0, 1, 0.01],
+      opacity: [0, 1, 0.05],
+      conversationOpacity: [0, 0.5, 0.01],
+      conversationDensity: [0, 1, 0.01],
+      count: [1, 20, 1],
+      size: [0.1, 10, 0.1],
+      bodySwing: [0, 3, 0.1],
+      turnAgility: [0.1, 3, 0.1],
+      tailFrequency: [0.1, 5, 0.1],
+      speed: [0.1, 10, 0.1],
+      wake: [0, 10, 0.1],
+      gridScale: [0.1, 10, 0.1],
+      gridOpacity: [0, 1, 0.01],
+      fishCount: [0, 1000, 10],
+      blur: [0, 64, 1],
+      glassOpacity: [0, 1, 0.05],
+    };
 
-  engine.renderer.fishRatio = currentRatio();
+    const OPTIONS = {
+      species: ["humpback", "orca"],
+      eyeColor: ["primary", "black", "white"],
+      glyphMode: ["ascii", "hanzi"],
+    };
 
-  if (opts.reducedMotion) {
-    // The standalone preview exposes a forced reduced-motion switch; mirror it
-    // onto the engine without waiting for the OS media query.
-    engine.reducedMotion = { matches: true, addEventListener() {}, removeEventListener() {} };
-    cancelAnimationFrame(engine.raf);
-    engine.raf = 0;
-    engine.drawStill();
-  }
+    const BOOLEAN_KEYS = ["enabled", "followTheme", "colorfulShimmer", "glass"];
+    const NUMERIC_KEYS = Object.keys(RANGES);
 
-  const statsTimer = window.setInterval(() => {
-    if (!onStats) return;
-    const now = performance.now();
-    stats.fps = Math.round((stats.frames * 1000) / Math.max(1, now - stats.last));
-    stats.frames = 0;
-    stats.last = now;
-    const total = engine.world.fish ? engine.world.fish.length : 0;
-    onStats({
-      fps: stats.fps,
-      fish: Math.ceil(total * currentRatio()),
-      targetFish: total,
-      whales: engine.world.sharks ? engine.world.sharks.length : whaleSpecs.length,
-      cells: engine.renderer.cols * engine.renderer.rows,
-      active: state.phase === "active",
-      reducedMotion: !!(engine.reducedMotion && engine.reducedMotion.matches),
-    });
-  }, 500);
+    /** Changing these needs a fresh engine; everything else applies live. */
+    const REBUILD_KEYS = ["count", "species", "size", "fishCount"];
 
-  return {
-    ready: Promise.resolve(),
-    setSettings(next) {
-      Object.assign(settings, next || {});
-      applyAppearance();
-    },
-    setTheme(theme) {
-      state.dark = theme === "dark";
-      applyAppearance();
-    },
-    setPhase(phase) {
-      state.phase = phase === "active" ? "active" : "hero";
-      engine.renderer.fishRatio = currentRatio();
-    },
-    destroy() {
-      window.clearInterval(statsTimer);
-      engine.destroy();
-    },
-  };
-}
+    const GROUPS = [
+      { id: "tide", keys: ["enabled", "opacity", "density", "conversationOpacity", "conversationDensity", "followTheme"] },
+      { id: "whale", keys: ["count", "species", "size", "bodySwing", "turnAgility", "tailFrequency"] },
+      { id: "ocean", keys: ["speed", "color", "colorfulShimmer", "eyeColor", "wake", "gridScale", "gridOpacity", "fishCount", "glyphMode"] },
+      { id: "glass", keys: ["glass", "blur", "glassOpacity"] },
+    ];
+
+    function clampSetting(value, lo, hi) {
+      return value < lo ? lo : value > hi ? hi : value;
+    }
+
+    function toNumber(value, fallback, min, max) {
+      const raw = value;
+      if (raw === null || raw === "" || typeof raw === "boolean") return fallback;
+      const n = Number(raw);
+      if (!Number.isFinite(n)) return fallback;
+      return clampSetting(n, min, max);
+    }
+
+    function normalizeSettings(value) {
+      const out = { ...DEFAULTS };
+      if (!value || typeof value !== "object" || Array.isArray(value)) return out;
+      for (const key of BOOLEAN_KEYS) {
+        if (typeof value[key] === "boolean") out[key] = value[key];
+      }
+      for (const key of NUMERIC_KEYS) {
+        out[key] = toNumber(value[key], DEFAULTS[key], RANGES[key][0], RANGES[key][1]);
+      }
+      out.count = Math.round(out.count);
+      out.fishCount = Math.round(out.fishCount / 10) * 10;
+      for (const key of Object.keys(OPTIONS)) {
+        if (OPTIONS[key].includes(value[key])) out[key] = value[key];
+      }
+      if (typeof value.color === "string" && /^#[0-9a-f]{6}$/i.test(value.color)) {
+        out.color = value.color.toLowerCase();
+      }
+      return out;
+    }
+
+    function readPinnedScheme() {
+      try {
+        const value = window.localStorage.getItem(SCHEME_KEY);
+        return value === "dark" || value === "light" ? value : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function writePinnedScheme(value) {
+      try {
+        window.localStorage.setItem(SCHEME_KEY, value === "dark" ? "dark" : "light");
+      } catch (error) {
+        /* optional */
+      }
+    }
+
+    function loadSettings() {
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        return raw ? normalizeSettings(JSON.parse(raw)) : { ...DEFAULTS };
+      } catch (error) {
+        return { ...DEFAULTS };
+      }
+    }
+
+    function createStore() {
+      let current = loadSettings();
+      let storageError = false;
+      const listeners = new Set();
+      const notify = () => {
+        for (const listener of listeners) {
+          try {
+            listener(current);
+          } catch (error) {
+            /* a broken panel must not break the backdrop */
+          }
+        }
+      };
+      const persist = () => {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+          storageError = false;
+        } catch (error) {
+          storageError = true;
+        }
+      };
+      return {
+        get: () => current,
+        set(patch) {
+          current = normalizeSettings({ ...current, ...(patch || {}) });
+          persist();
+          notify();
+          return current;
+        },
+        reset() {
+          current = { ...DEFAULTS };
+          persist();
+          notify();
+          return current;
+        },
+        subscribe(listener) {
+          listeners.add(listener);
+          return () => listeners.delete(listener);
+        },
+        get storageError() {
+          return storageError;
+        },
+      };
+    }
+
+    /* =====================================================================
+     * Ocean adapter — upstream engine + this plugin's tide ratios
+     * ===================================================================*/
+    const WHALE_SIZE_STEPS = [1, 0.7, 0.84, 0.77, 0.65, 0.9];
+
+    function createOcean(canvas, options) {
+      const opts = options || {};
+      const settings = normalizeSettings(opts.settings);
+      let dark = opts.theme === "dark";
+      let phase = opts.phase === "active" ? "active" : "hero";
+      let engine = null;
+      let disposed = false;
+      const onStats = typeof opts.onStats === "function" ? opts.onStats : null;
+      const stats = { frames: 0, last: performance.now(), fps: 0 };
+
+      function ratio() {
+        const hero = clampSetting(settings.density, 0, 1);
+        const ebb = clampSetting(settings.conversationDensity, 0, 1);
+        return phase === "active" ? hero * ebb : hero;
+      }
+
+      function whaleSpecs() {
+        const count = clampSetting(Math.round(settings.count), 1, 20);
+        const kind = settings.species === "orca" ? "orca" : "whale";
+        return Array.from({ length: count }, (_, i) => ({
+          kind,
+          size: settings.size * WHALE_SIZE_STEPS[i % WHALE_SIZE_STEPS.length],
+        }));
+      }
+
+      function applyFont() {
+        if (!engine) return;
+        try {
+          engine.renderer.setFontFamily(getComputedStyle(canvas).fontFamily);
+        } catch (error) {
+          /* keep the previous family */
+        }
+      }
+
+      function build() {
+        if (disposed) return;
+        if (engine) {
+          try {
+            engine.destroy();
+          } catch (error) {
+            /* already gone */
+          }
+          engine = null;
+        }
+        engine = new OceanEngine(
+          canvas,
+          whaleSpecs(),
+          settings.speed,
+          dark,
+          settings.gridScale,
+          settings.gridOpacity,
+          settings.fishCount,
+          settings.wake,
+          settings.color,
+          settings.glyphMode,
+          settings.colorfulShimmer,
+          settings.eyeColor,
+          settings.bodySwing,
+          settings.turnAgility,
+          settings.tailFrequency,
+        );
+        engine.renderer.fishRatio = ratio();
+        const baseRender = engine.render.bind(engine);
+        engine.render = (dt) => {
+          baseRender(dt);
+          stats.frames++;
+        };
+        applyFont();
+        if (opts.reducedMotion) {
+          engine.reducedMotion = { matches: true, addEventListener() {}, removeEventListener() {} };
+          cancelAnimationFrame(engine.raf);
+          engine.raf = 0;
+          engine.drawStill();
+        }
+      }
+
+      function apply() {
+        if (!engine || disposed) return;
+        engine.setAppearance(
+          settings.speed,
+          dark,
+          settings.gridOpacity,
+          settings.wake,
+          settings.color,
+          settings.colorfulShimmer,
+          settings.eyeColor,
+          settings.bodySwing,
+          settings.turnAgility,
+          settings.tailFrequency,
+        );
+        engine.renderer.fishRatio = ratio();
+        if (engine.renderer.glyphMode !== settings.glyphMode) {
+          engine.renderer.glyphMode = settings.glyphMode;
+          engine.resize();
+        }
+        if (Math.abs(engine.renderer.gridScale - settings.gridScale) > 1e-6) {
+          engine.renderer.gridScale = settings.gridScale;
+          engine.resize();
+        }
+      }
+
+      build();
+
+      const statsTimer = window.setInterval(() => {
+        if (!onStats || disposed) return;
+        const now = performance.now();
+        stats.fps = Math.round((stats.frames * 1000) / Math.max(1, now - stats.last));
+        stats.frames = 0;
+        stats.last = now;
+        const world = engine && engine.world;
+        const total = world && world.fish ? world.fish.length : 0;
+        onStats({
+          fps: stats.fps,
+          fish: Math.ceil(total * ratio()),
+          targetFish: total,
+          whales: world && world.sharks ? world.sharks.length : 0,
+          cells: engine && engine.renderer ? engine.renderer.cols * engine.renderer.rows : 0,
+          active: phase === "active",
+          reducedMotion: !!(engine && engine.reducedMotion && engine.reducedMotion.matches),
+        });
+      }, 500);
+
+      return {
+        ready: Promise.resolve(),
+        rebuild: build,
+        setSettings(next) {
+          const before = { ...settings };
+          Object.assign(settings, normalizeSettings({ ...settings, ...(next || {}) }));
+          if (REBUILD_KEYS.some((key) => before[key] !== settings[key])) {
+            build();
+          } else {
+            apply();
+          }
+        },
+        setTheme(theme) {
+          dark = theme === "dark";
+          apply();
+        },
+        setPhase(next) {
+          phase = next === "active" ? "active" : "hero";
+          if (engine) engine.renderer.fishRatio = ratio();
+        },
+        destroy() {
+          disposed = true;
+          window.clearInterval(statsTimer);
+          if (engine) {
+            try {
+              engine.destroy();
+            } catch (error) {
+              /* already gone */
+            }
+            engine = null;
+          }
+        },
+      };
+    }
 
 
 /* ===================== preview harness (not shipped) ===================== */
 (function () {
   "use strict";
-  const KEY = "dsh-whale-tide:v1";
-  const DEFAULTS = {
-    enabled: true,
-    density: 0.65,
-    speed: 1,
-    opacity: 1,
-    conversationOpacity: 0.16,
-    conversationDensity: 0.3,
-    color: "#4d6bfe",
-    followTheme: true,
-  };
-  const RANGES = {
-    density: [0, 1, 0.01],
-    speed: [0.1, 3, 0.05],
-    opacity: [0, 1, 0.01],
-    conversationOpacity: [0, 0.5, 0.01],
-    conversationDensity: [0, 1, 0.01],
-  };
-  const LABELS = {
-    enabled: "显示背景",
-    density: "生物密度",
-    speed: "游动速度",
-    opacity: "整体透明度",
-    conversationOpacity: "对话中透明度",
-    conversationDensity: "对话中生物比例",
-    color: "主色",
-    followTheme: "深/浅色跟随",
-  };
   const params = new URLSearchParams(location.search);
   const stage = document.getElementById("stage");
   const backdrop = document.getElementById("backdrop");
@@ -2671,36 +2843,53 @@ function createOcean(canvas, options) {
   let pinnedTheme = pageTheme;
   let phase = params.get("phase") === "active" ? "active" : "hero";
   let reduced = params.get("reduced") === "1" ? true : matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let settings = load();
+  let settings = loadSettings();
+  let ocean = null;
 
-  function normalize(value) {
-    const out = { ...DEFAULTS };
-    if (!value || typeof value !== "object") return out;
-    for (const key of Object.keys(DEFAULTS)) if (value[key] !== undefined) out[key] = value[key];
-    out.enabled = out.enabled !== false;
-    out.followTheme = out.followTheme !== false;
-    for (const key of Object.keys(RANGES)) {
-      const [min, max] = RANGES[key];
-      const n = Number(out[key]);
-      out[key] = Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : DEFAULTS[key];
-    }
-    out.color = /^#[0-9a-f]{6}$/i.test(String(out.color)) ? String(out.color).toLowerCase() : DEFAULTS.color;
-    return out;
+  const LABELS = {
+    zh: {
+      groupTide: "潮汐与显示", groupWhale: "鲸鱼", groupOcean: "海洋与鱼群", groupGlass: "输入框磨砂",
+      enabled: "显示背景", density: "生物密度", opacity: "整体透明度", conversationOpacity: "对话中透明度",
+      conversationDensity: "对话中生物比例", followTheme: "深/浅色跟随",
+      count: "鲸鱼数量", species: "鲸鱼种类", size: "鲸鱼大小", bodySwing: "身体摆动幅度",
+      turnAgility: "转弯灵活度", tailFrequency: "摆尾频率",
+      speed: "游动速度", color: "主色", colorfulShimmer: "彩色闪烁", eyeColor: "眼睛底色",
+      wake: "尾迹强度", gridScale: "字符栅格", gridOpacity: "底纹网格透明度", fishCount: "鱼群数量", glyphMode: "字符风格",
+      glass: "毛玻璃输入框", blur: "玻璃模糊", glassOpacity: "玻璃不透明度",
+      humpback: "座头鲸", orca: "虎鲸", eyePrimary: "跟随主色", eyeBlack: "黑色", eyeWhite: "白色",
+      glyphAscii: "ASCII", glyphHanzi: "汉字",
+    },
+  };
+  const L = LABELS.zh;
+
+  function label(key) {
+    if (key === "species") return "";
+    return L[key] || key;
   }
-  function load() {
-    try { return normalize(JSON.parse(localStorage.getItem(KEY))); } catch { return { ...DEFAULTS }; }
+  function optionLabel(key, value) {
+    if (key === "species") return value === "orca" ? L.orca : L.humpback;
+    if (key === "eyeColor") return value === "black" ? L.eyeBlack : value === "white" ? L.eyeWhite : L.eyePrimary;
+    if (key === "glyphMode") return value === "hanzi" ? L.glyphHanzi : L.glyphAscii;
+    return value;
   }
-  function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(settings)); saveState.textContent = "已保存 · " + new Date().toLocaleTimeString(); }
-    catch { saveState.textContent = "保存失败：浏览器禁用了本地存储"; }
+  function fmt(key, value) {
+    if (key === "speed") return Number(value).toFixed(2) + "×";
+    if (key === "blur") return Math.round(value) + "px";
+    if (key === "count" || key === "fishCount") return String(Math.round(value));
+    return Number(value).toFixed(2);
   }
-  function effectiveTheme() { return settings.followTheme ? pageTheme : pinnedTheme; }
+  function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); saveState.textContent = "已保存 · " + new Date().toLocaleTimeString(); }
+    catch (e) { saveState.textContent = "保存失败：本地存储不可用"; }
+  }
   function applyChrome() {
     document.documentElement.dataset.theme = pageTheme;
-    document.documentElement.dataset.reduced = reduced ? "1" : "0";
     stage.dataset.phase = phase;
-    stage.setAttribute("aria-hidden", phase === "active" ? "false" : "true");
+    stage.dataset.glass = settings.glass ? "1" : "0";
     backdrop.dataset.enabled = settings.enabled ? "1" : "0";
+    backdrop.dataset.glyph = settings.glyphMode;
+    document.body.style.setProperty("--dshwt-blur", settings.blur + "px");
+    document.body.style.setProperty("--dshwt-glass-opacity", String(settings.glassOpacity));
     const target = (phase === "active" ? settings.conversationOpacity : 1) * settings.opacity;
     backdrop.style.opacity = String(target);
     document.getElementById("btnPhase").textContent = phase === "active" ? "回到空会话" : "对话中";
@@ -2709,99 +2898,117 @@ function createOcean(canvas, options) {
     document.getElementById("btnMotion").classList.toggle("on", reduced);
     document.getElementById("btnMotion").textContent = reduced ? "动效已关" : "减少动效";
   }
+  function themeForOcean() { return settings.followTheme ? pageTheme : pinnedTheme; }
   function applyToEngine() {
-    const theme = effectiveTheme();
-    if (ocean) {
-      ocean.setTheme(theme);
-      ocean.setSettings(settings);
-      ocean.setPhase(phase);
-    }
+    if (!ocean) return;
+    ocean.setTheme(themeForOcean());
+    ocean.setSettings(settings);
+    ocean.setPhase(phase);
   }
-  function saveAndApply(patch) {
+  function commit(patch) {
     if (patch.followTheme === false) pinnedTheme = pageTheme;
-    settings = normalize({ ...settings, ...patch });
-    save();
+    settings = normalizeSettings({ ...settings, ...patch });
+    persist();
     applyChrome();
     applyToEngine();
     renderControls();
   }
-  function buildControls() {
+  function renderControls() {
     controls.innerHTML = "";
-    const addSwitch = (key) => {
-      const row = document.createElement("div"); row.className = "row";
-      row.innerHTML = '<span class="name">' + LABELS[key] + '</span><button class="switch" role="switch" aria-checked="' + (settings[key] ? "true" : "false") + '" data-key="' + key + '"></button>';
-      controls.append(row);
-      row.querySelector("button").addEventListener("click", () => saveAndApply({ [key]: !settings[key] }));
-    };
-    const addRange = (key) => {
-      const [min, max, step] = RANGES[key];
-      const row = document.createElement("div"); row.className = "row";
-      row.innerHTML = '<span class="name">' + LABELS[key] + '</span><span class="rangebox"><input type="range" min="' + min + '" max="' + max + '" step="' + step + '" value="' + settings[key] + '" aria-label="' + LABELS[key] + '"><span class="val">' + Number(settings[key]).toFixed(2) + '</span></span>';
-      controls.append(row);
-      const input = row.querySelector("input");
-      input.addEventListener("input", () => {
-        const val = Number(input.value);
-        row.querySelector(".val").textContent = val.toFixed(2);
-        saveAndApply({ [key]: val });
-      });
-    };
-    const colorRow = document.createElement("div"); colorRow.className = "row";
-    colorRow.innerHTML = '<span class="name">' + LABELS.color + '</span><span class="colorline"><input type="color" value="' + settings.color + '" aria-label="' + LABELS.color + '"><span class="hex">' + settings.color + '</span></span>';
-    controls.append(colorRow);
-    colorRow.querySelector("input").addEventListener("input", (event) => {
-      colorRow.querySelector(".hex").textContent = event.target.value;
-      saveAndApply({ color: event.target.value });
-    });
-    addSwitch("enabled");
-    addRange("density");
-    addRange("speed");
-    addRange("opacity");
-    addRange("conversationOpacity");
-    addRange("conversationDensity");
-    addSwitch("followTheme");
+    for (const group of GROUPS) {
+      const title = document.createElement("div");
+      title.className = "grp";
+      title.textContent = L["group" + group.id.charAt(0).toUpperCase() + group.id.slice(1)];
+      controls.append(title);
+      for (const key of group.keys) {
+        const row = document.createElement("div");
+        row.className = "row";
+        const name = document.createElement("span");
+        name.className = "name";
+        name.textContent = key === "species" || key === "eyeColor" || key === "glyphMode" ? L[key] : L[key];
+        row.append(name);
+        let el;
+        if (BOOLEAN_KEYS.includes(key)) {
+          el = document.createElement("button");
+          el.className = "switch";
+          el.setAttribute("role", "switch");
+          el.setAttribute("aria-checked", settings[key] ? "true" : "false");
+          el.addEventListener("click", () => commit({ [key]: !settings[key] }));
+        } else if (OPTIONS[key]) {
+          el = document.createElement("select");
+          for (const opt of OPTIONS[key]) {
+            const o = document.createElement("option");
+            o.value = opt;
+            o.textContent = optionLabel(key, opt);
+            if (settings[key] === opt) o.selected = true;
+            el.append(o);
+          }
+          el.addEventListener("change", () => commit({ [key]: el.value }));
+        } else if (key === "color") {
+          el = document.createElement("span");
+          el.className = "colorline";
+          const input = document.createElement("input");
+          input.type = "color";
+          input.value = settings.color;
+          const hex = document.createElement("span");
+          hex.className = "val";
+          hex.textContent = settings.color;
+          input.addEventListener("input", () => commit({ color: input.value }));
+          el.append(input, hex);
+        } else {
+          el = document.createElement("span");
+          el.className = "rangebox";
+          const range = RANGES[key];
+          const input = document.createElement("input");
+          input.type = "range";
+          input.min = range[0]; input.max = range[1]; input.step = range[2];
+          input.value = settings[key];
+          const val = document.createElement("span");
+          val.className = "val";
+          val.textContent = fmt(key, settings[key]);
+          input.addEventListener("input", () => commit({ [key]: Number(input.value) }));
+          el.append(input, val);
+        }
+        row.append(el);
+        controls.append(row);
+      }
+    }
   }
-  function renderControls() { buildControls(); }
-  function bindButtons() {
-    document.getElementById("btnPhase").addEventListener("click", () => {
-      phase = phase === "active" ? "hero" : "active";
-      applyChrome(); applyToEngine();
-    });
-    document.getElementById("btnTheme").addEventListener("click", () => {
-      pageTheme = pageTheme === "dark" ? "light" : "dark";
-      if (settings.followTheme) pinnedTheme = pageTheme;
-      applyChrome(); applyToEngine();
-    });
-    document.getElementById("btnMotion").addEventListener("click", () => {
-      reduced = !reduced;
-      applyChrome();
-      ocean.destroy();
-      mountOcean();
-    });
-    document.getElementById("btnPanel").addEventListener("click", () => panel.classList.toggle("open"));
-    document.getElementById("btnClose").addEventListener("click", () => panel.classList.remove("open"));
-    document.getElementById("btnReset").addEventListener("click", () => {
-      settings = { ...DEFAULTS };
-      save(); applyChrome(); applyToEngine(); renderControls();
-    });
-  }
-
-  let ocean = null;
   function mountOcean() {
     ocean = createOcean(canvas, {
       settings,
-      theme: effectiveTheme(),
+      theme: themeForOcean(),
       phase,
       reducedMotion: reduced,
       onStats: (s) => {
         statsEl.textContent = s.fps + " fps · 鱼 " + s.fish + "/" + s.targetFish + " · 鲸 " + s.whales + " · " + s.cells + " 格" + (s.reducedMotion ? " · 静态" : "");
       },
     });
-    ocean.ready.then(() => { if (ocean) ocean.setPhase(phase); });
+    ocean.ready.then(() => { if (ocean) { ocean.setPhase(phase); ocean.setSettings(settings); } });
   }
+  document.getElementById("btnPhase").addEventListener("click", () => {
+    phase = phase === "active" ? "hero" : "active";
+    applyChrome(); applyToEngine();
+  });
+  document.getElementById("btnTheme").addEventListener("click", () => {
+    pageTheme = pageTheme === "dark" ? "light" : "dark";
+    applyChrome(); applyToEngine();
+  });
+  document.getElementById("btnMotion").addEventListener("click", () => {
+    reduced = !reduced;
+    applyChrome();
+    ocean.destroy();
+    mountOcean();
+  });
+  document.getElementById("btnPanel").addEventListener("click", () => panel.classList.toggle("open"));
+  document.getElementById("btnClose").addEventListener("click", () => panel.classList.remove("open"));
+  document.getElementById("btnReset").addEventListener("click", () => {
+    settings = { ...DEFAULTS };
+    persist(); applyChrome(); applyToEngine(); renderControls();
+  });
 
   applyChrome();
   renderControls();
-  bindButtons();
   mountOcean();
   panel.classList.toggle("open", params.get("panel") === "1");
   window.__WHALE_TIDE_PREVIEW__ = {

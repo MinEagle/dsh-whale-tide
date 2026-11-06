@@ -44,16 +44,28 @@ test("patch row id and client registration id match the package name", () => {
   assert.equal((client.match(/__ModuleLoader__\.load\(/g) || []).length, 1);
 });
 
-test("locale resources carry plugin-manager metadata", () => {
+test("locale resources carry plugin-manager metadata and every control", async () => {
   assert.equal(typeof zh.meta.title, "string");
   assert.equal(typeof zh.meta.description, "string");
   assert.equal(typeof en.meta.title, "string");
   assert.equal(typeof en.meta.description, "string");
+  const { BOOLEAN_KEYS, DEFAULTS, GROUPS, HINTS, LABELS, OPTIONS, RANGES } = await import("../lib/settings.js");
+  const controls = [...Object.keys(RANGES), ...Object.keys(OPTIONS), ...BOOLEAN_KEYS, "color"];
   for (const [file, dict] of [["zh", zh], ["en", en]]) {
-    for (const key of ["enabled", "density", "speed", "opacity", "conversationOpacity", "conversationDensity", "color", "followTheme", "reset"]) {
+    for (const key of ["title", "sectionDescription", "groupTide", "groupWhale", "groupOcean", "groupGlass", "reset"]) {
       assert.equal(typeof dict[key], "string", `${file}.${key}`);
     }
+    for (const key of controls) {
+      assert.equal(typeof dict[key], "string", `${file}.${key}`);
+      const hint = "hint" + key.charAt(0).toUpperCase() + key.slice(1);
+      assert.equal(typeof dict[hint], "string", `${file}.${hint}`);
+    }
+    assert.deepEqual(Object.keys(dict).length > 0, true);
   }
+  assert.equal(controls.length, Object.keys(DEFAULTS).length);
+  assert.equal(GROUPS.flatMap((g) => g.keys).length, controls.length);
+  assert.equal(Object.keys(LABELS).length, controls.length);
+  assert.equal(Object.keys(HINTS).length, controls.length);
 });
 
 test("the npm file list includes every runtime export", () => {

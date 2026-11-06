@@ -16,9 +16,13 @@ the empty conversation the fish swim back in from the edges.
 | --- | --- |
 | ![Light](docs/media/hero-light.png) | ![Dark](docs/media/hero-dark.png) |
 
-| Active conversation · ebbed | Settings (same controls as the standalone preview) |
+| Active conversation · ebbed | Settings · light (same controls as the preview) |
 | --- | --- |
 | ![Active](docs/media/active-light.png) | ![Settings](docs/media/settings-preview.png) |
+
+| Active · dark | Settings · dark |
+| --- | --- |
+| ![Dark active](docs/media/active-dark.png) | ![Dark settings](docs/media/settings-dark.png) |
 
 ## Features
 
@@ -35,6 +39,10 @@ the empty conversation the fish swim back in from the edges.
   soft inherited halo.
 - **Configurable** — exactly eight settings, applied live, saved in
   `localStorage`, with a restore-defaults button.
+- **Light / dark** — following the DSH theme switches the backdrop colour,
+  sidebar glass, text halo, composer glass and canvas palette together. The
+  scheme is read from `data-ds-theme-source`, `body[data-ds-dark-theme]`,
+  `color-scheme` and the theme service, never from the body background.
 - **Quiet** — respects `prefers-reduced-motion` (settles and draws one frame);
   pauses `requestAnimationFrame` while the page is hidden.
 - **Clean unmount** — removing the plugin deletes the layer, canvas, styles
@@ -61,11 +69,11 @@ From npm (once published):
 dsh plugin --profile <your-profile> add dsh-whale-tide
 ```
 
-From the 0.1.1 GitHub Release tarball:
+From the 0.2.0 GitHub Release tarball:
 
 ```bash
 dsh plugin --profile <your-profile> add \
-  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.1.1/dsh-whale-tide-0.1.1.tgz
+  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.2.0/dsh-whale-tide-0.2.0.tgz
 ```
 
 From a local checkout:
@@ -89,22 +97,57 @@ After installation:
 > The client declares `dsh.client.immediately: true`, so it mounts at page
 > load instead of waiting for the settings page to open.
 
-## Settings
+## Settings (24, aligned with dsh-ascii-whales)
+
+Four groups; changes apply live, persist in `localStorage`
+(`dsh-whale-tide:v1`), and "Restore defaults" resets everything.
+
+### Tide and display (this plugin)
 
 | Setting | Default | Range | Notes |
 | --- | --- | --- | --- |
-| Show background | on | on / off | Removes the layer and `body` attributes; native UI returns |
-| Creature density | 0.65 | 0–1 | Fish population; 0 leaves only the whale |
-| Swimming speed | 1.00× | 0.1–3 | Base speed multiplier |
-| Opacity | 1.00 | 0–1 | Backdrop opacity in an empty conversation |
-| Opacity in conversation | 0.16 | 0–0.5 | **Multiplier**; final = opacity × this value |
+| Show background | on | on / off | Removes the layer and `body` attributes |
+| Opacity | 1.00 | 0–1 | Layer opacity in an empty conversation |
+| Creature density | 0.65 | 0–1 | Share of the school shown at high tide |
+| Opacity in conversation | 0.16 | 0–0.5 | Multiplier while active |
 | Creature ratio in conversation | 0.30 | 0–1 | Share of fish kept while active |
-| Accent color | `#4d6bfe` | `#rrggbb` | Tints whale, fish, and wake |
-| Follow light / dark | on | on / off | On: follow DSH; off: pin the mode active when switched off (`dsh-whale-tide:scheme`) |
+| Follow light / dark | on | on / off | Off pins the mode active when switched off |
 
-Preferences live in `localStorage` under `dsh-whale-tide:v1`. If storage is
-unavailable, changes still apply for the current page and the panel shows a
-warning.
+### Whales (upstream)
+
+| Setting | Default | Range | Notes |
+| --- | --- | --- | --- |
+| Whale count | 3 | 1–20 | Rebuilds the world |
+| Whale species | humpback | humpback / orca | Orca is slimmer with white patches |
+| Whale size | 1.2× | 0.1–10 | Rebuilds the world |
+| Body swing | 0.8 | 0–3 | Body-wave amplitude |
+| Turn agility | 0.7 | 0.1–3 | How fast a heading is followed |
+| Tail frequency | 0.8 | 0.1–5 | Tail-beat rhythm |
+
+### Ocean and fish (upstream)
+
+| Setting | Default | Range | Notes |
+| --- | --- | --- | --- |
+| Swimming speed | 0.65× | 0.1–10 | Base speed multiplier |
+| Accent color | `#4d6bfe` | `#rrggbb` | Whale, fish and wake tint |
+| Colorful shimmer | off | on / off | Seven-colour glints on the body |
+| Eye background | follow accent | accent / black / white | Dark backing behind eyes |
+| Wake intensity | 1.0 | 0–10 | Wake and ripple strength |
+| Cell size | 1.0× | 0.1–10 | Rebuilds the world |
+| Grid opacity | 0.05 | 0–1 | Background grid |
+| Fish count | 170 | 0–1000 | Rebuilds the world |
+| Character style | ASCII | ASCII / Hanzi | Hanzi uses a serif CJK face |
+
+### Composer glass (upstream)
+
+| Setting | Default | Range | Notes |
+| --- | --- | --- | --- |
+| Frosted composer | on | on / off | High tide only; disabled while active |
+| Glass blur | 14 px | 0–64 | Backdrop blur radius |
+| Glass opacity | 0.45 | 0–1 | Tint opacity |
+
+> Count, species, size, fish count and cell size rebuild the engine; the rest
+> apply live without interrupting the swim.
 
 ## Tide model
 
@@ -208,7 +251,7 @@ See [docs/design.md](docs/design.md).
   the `hero` state instead of breaking.
 - The UI exposes exactly eight settings by design; deeper knobs (glyph set,
   wake strength, whale count) stay in the engine.
-- 0.1.1 is available as a GitHub Release tarball but not yet on the npm
+- 0.2.0 is available as a GitHub Release tarball but not yet on the npm
   registry; the repository also includes a local directory install and a
   packed `dist/*.tgz`.
 

@@ -322,3 +322,41 @@ sidebar=rgb(249,250,251)
 
 以后如果还需要调整观感，优先改上游参数（`count` / `size` / `speed` /
 `bodySwing` / `turnAgility` / `tailFrequency`），不要回到自写巡游。
+
+## 24. 深色模式失效：body 背景被自己覆盖，判断永远得到 light（实际命中）
+
+0.1.1 用 `body` 的计算背景亮度判断深浅色：
+
+```js
+const rgb = parseRgb(getComputedStyle(document.body).backgroundColor);
+return luminance < .45 ? "dark" : "light";
+```
+
+但插件自己把 body 铺成 `#fff`，于是深色主题下也判成 light：背景仍白、侧栏仍是浅色
+玻璃、画布仍是浅色调色板，看起来就是“暗黑模式没适配”。
+
+修复（0.2.0）：
+
+- 方案来源改为 `html[data-ds-theme-source]`（DSH 0.2.x 实际写入的属性）→
+  `body[data-ds-dark-theme]` → `color-scheme` → 主题服务，最后才用
+  `prefers-color-scheme`；**不再读 body 背景**；
+- 同时监听 html 的 `data-ds-theme-source` / class / style 与 body 的
+  `data-ds-dark-theme`，切换时更新两套属性并调用引擎 `setAppearance(dark)`；
+- 深色值单独一套：背景 `#151517`、侧栏 `rgba(21,21,23,.62)`、正文柔光
+  `rgba(21,21,23,…)`、磨砂 `rgba(24,24,26,var(--dshwt-glass-opacity))`。
+
+验证：在真实 DSH 的「设置 → 通用设置 → 外观 → 深色」切换后，
+`body[data-dsh-whale-tide-scheme="dark"]`、body 背景 `rgb(21,21,23)`、
+层背景 `rgb(21,21,23)`、侧栏 token `rgba(21,21,23,.62)` 全部成立；切回浅色恢复。
+
+## 25. 上游 19 项参数不要只抄 8 项（用户反馈）
+
+第一版只暴露了自己认为重要的 8 项，用户直接问“ASCII 鲸鱼里面有很多设置啊，
+你怎么只有八项”。0.2.0 把上游 0.1.5 的全部可见参数补齐，共 24 项，并按
+「潮汐与显示 / 鲸鱼 / 海洋与鱼群 / 输入框磨砂」分组：
+
+- 重建型：数量、种类、大小、鱼群数量、字符栅格；
+- 实时型：速度、主色、彩色闪烁、眼睛底色、尾迹、网格透明度、摆动、转向、摆尾、
+  磨砂三件套。
+
+`test/settings.test.js` 里的默认值断言直接对着上游 0.1.5 的数值写，防止再次漏项。
