@@ -43,6 +43,13 @@ DeepSeek Harness（DSH）的动态背景插件：一头座头鲸与数群小鱼�
 dsh plugin --profile <你的 profile> add dsh-whale-tide
 ```
 
+从 GitHub Release 的 tgz 安装（0.1.0 已发布）：
+
+```bash
+dsh plugin --profile <你的 profile> add \
+  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.1.0/dsh-whale-tide-0.1.0.tgz
+```
+
 从本地目录安装：
 
 ```bash
@@ -170,7 +177,7 @@ dsh-whale-tide/
 - 鲸鱼是**风格化**的字符鲸：在低 DPI / 窄窗口下轮廓会变粗；这是字符栅格化的取舍，不是图片缩放。
 - DSH 内部的会话 DOM 不是公开 API。相位检测只用 `data-content-phase` 与 `data-conversation-*` 属性；若未来 DSH 改动这些属性，插件会退化到「始终 hero」，不会报错或破坏页面。
 - 设置项按需求固定为 8 项；更深的自定义（字符集、尾迹强度、鲸鱼数量）保留在引擎内部，不暴露 UI。
-- 0.1.0 尚未发布到 npm registry；仓库内附可直接安装的本地目录与 `dist/*.tgz` 打包产物。
+- 0.1.0 已发布 GitHub Release（含 tgz），但尚未发布到 npm registry；仓库内也附可直接安装的本地目录与 `dist/*.tgz`。
 
 ## License
 
