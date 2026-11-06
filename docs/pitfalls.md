@@ -447,3 +447,21 @@ chat 容器 `textShadow = none`，正文完全干净；鲸鱼仍可见但很淡�
 
 实测 TaskDuration：关闭 10% → 0.4.1 22% → 0.5.0 17%；ScriptDuration 16% → 9%。
 对话中 canvas 像素从 4.7M 降到 1.17M（-75%），渲染帧率 60→18（-70%）。
+
+## 32. 只调透明度会显得“脏透明”，要按 dsh-quiet 的对话模型做（用户反馈）
+
+0.5.0 把对话层压到 0.20，但鲸鱼和鱼群仍在正文后面游：文字直接压在蓝色块上，
+表面 token 又是半透的，整体看起来就是“脏透明”。用户明确要求 cde 一起做。
+
+0.6.0 按 dsh-quiet 的模型实现：
+
+- **D**：`chatBounds()` 取聊天区矩形，背景层只铺到聊天区右缘；侧栏单独
+  `.dshwt-sidebar-glass`；
+- **E**：`World.conversation` 让鲸鱼向最近边缘 4× 速离场，鱼群向外推；
+  `creatureAlpha` 缓动到 0，只留极淡网格；
+- **C**：恢复 dsh-quiet 式的局部 `.dshwt-prose::before` 柔光（白 0.55 / 深
+  0.60），因为水面已平静，不会变成白卡片。
+
+实测：active 时 layer 宽度 = 聊天区右缘、侧栏玻璃 280px、prose 存在且
+`::before` 为 `rgba(255,255,255,0.55)`；切回空会话 `World.seed()` 后鲸鱼
+重新入场。

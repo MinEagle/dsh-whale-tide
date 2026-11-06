@@ -1,6 +1,6 @@
 # 设计说明
 
-本文说明鲸汐（Whale Tide）0.5.0 的架构、相位模型、渲染流水线、性能取舍与验证边界。
+本文说明鲸汐（Whale Tide）0.6.0 的架构、相位模型、渲染流水线、性能取舍与验证边界。
 需求与验收见仓库根目录 README；这里记录“为什么这样做”。
 
 ## 1. 目标与非目标
@@ -294,27 +294,29 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
 背景底色、侧栏 token、正文 text-shadow、磨砂底色、画布调色板都按这两个属性
 分浅/深两套；切换时只更新属性与引擎 `setAppearance`，不重建引擎。
 
-### 4.9 对话可读性（0.4.1）
+### 4.9 对话界面（0.6.0，对齐 dsh-quiet）
 
-对话界面保留 dsh-quiet 的表面处理，但**不再使用文字光晕/柔光片**：
+0.6.0 按 dsh-quiet 的对话模型重做“退潮”，不再只是把整层调透明：
 
-1. **主题 token**（`theme.overrideTokens`，卸载自动还原）：`bg-base` 透明，
-   `bg-layer-1` 0.84/0.88，`bg-layer-2/3` 保持不透明（弹层可读），sidebar
-   0.55/0.60，气泡 0.92/0.90，label 与 border 全套。共 14 项。
-2. **无正文罩层**：不挂 `.dshwt-prose`，不加 `text-shadow`。对话中的
-   `conversationOpacity` 默认 **0.20**（0.10 在真实显示器上几乎看不见：
-   蓝色 10% 叠白只剩 #eef0ff）；`tools/preview.html` 里对应的模拟文字也
-   去掉了 `::before` 光晕。
-3. **输入框与弹层**：对话中 `[data-composer-card]` 0.74/0.78 + blur 3px，
-   `[data-trigger-menu]` 强制不透明，DPR≥2 边框 0.5px。
+1. **画布按聊天区裁切**：`chatBounds()` 找到可见的
+   `[data-conversation-content][data-conversation-region="chat"]`，把背景层
+   设为 `left:0; top:0; width:聊天区右缘; height:窗口高`；侧栏上方再叠一层
+   只覆盖侧栏宽度的 `.dshwt-sidebar-glass`（`backdrop-filter: blur(6px)`，
+   无底色），和 dsh-quiet 的 `.dshr-sidebar-glass` 一致。顶部标题栏不铺画布。
+2. **生物离场 + 海面平静**：`World.conversation` 打开后，除一头**侧栏驻留
+   鲸**外，鲸鱼改向最近的边缘以 4× 速度游出，鱼群被向外推；渲染器只绘制
+   驻留鲸，`creatureAlpha` 缓动到 0 的部分只影响点阵/尾迹，海面只留下
+   `gridOpacity` 极低的网格。驻留鲸长度收窄到侧栏宽度的 0.55 倍、头部目标
+   在侧栏中心，尾鳍允许略微越过分界。切回空会话时 `World.seed()` 重新入场。
+3. **正文柔光片**：`tagProse()` 仍按结构给每条助手消息挂 `.dshwt-prose`；
+   因为对话水面已经平静，这里用 dsh-quiet 同款的局部 `::before`
+   （白 0.55、12px 阴影、blur 1px；深色 0.60），不会形成 0.3.0 那种白卡片。
+4. **输入框与弹层**：0.74/0.78 + blur 3px，`[data-trigger-menu]` 不透明，
+   DPR≥2 边框 0.5px；主题 token 仍由 `theme.overrideTokens` 管理。
 
-为什么删掉 0.3.0 的正文柔光片：dsh-quiet 的 `.dshr_text::before` 在其细线
-灰度海面上是柔光；我们的鲸鱼是**整块高对比蓝色块**，同样的 70% 白底 + 22px
-阴影会变成一块块明显的白卡片，两段之间还会连成大白板。对照图见
-`docs/design-options/`。0.4.0 改用“更深退潮”，正文区域完全干净。
-迁移：`dsh-whale-tide:schema` 标记为 v2；旧设置里的
-`conversationOpacity === 0.16`（0.3 旧默认）或 `0.10`（0.4.0 中间默认）
-会一次性改为 0.20，之后用户再改的值不会被重写。
+与 0.5.0 的区别：0.5.0 让鲸鱼在 0.20 透明度下继续穿过正文，文字直接压在
+蓝色块上；0.6.0 让生物真正离场、海面平静，聊天区接近 dsh-quiet 的干净
+表面，只在侧栏保留玻璃后面的水纹。
 
 ## 5. 性能取舍
 
@@ -375,12 +377,13 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
     全部消失，侧栏 token 回到 `#f9fafb`、`--dsw-alias-bg-base` 回到 `#fff`；
   - 字符风格：切到汉字后 canvas 字体为 serif 栈、层属性 `data-glyph="hanzi"`、
     格子重排为 11856 格；恢复默认回到 ASCII；
-  - 对话可读性（0.4.0）：`--dsw-alias-bg-layer-1` 在浅色为
+  - 对话可读性（0.6.0）：`--dsw-alias-bg-layer-1` 在浅色为
     `rgba(255,255,255,0.84)`、深色 `rgba(23,24,28,0.88)`；气泡
     `rgba(237,243,254,0.92)`；composer `rgba(255,255,255,0.74)` +
-    `blur(3px)`（深色 0.78）；对话中 layer opacity 为 0.20，无 `.dshwt-prose`
-    节点、无 text-shadow；关闭插件后 token 回到原生 `#232324`（深色）/
-    `#2c2c2e`；
+    `blur(3px)`（深色 0.78）；对话中 `World.conversation=true`、画布裁到聊天区
+    右缘、侧栏玻璃宽度与 sidebar 一致；`creatureAlpha` 约 1 秒后为 0，
+    `.dshwt-prose` 存在且 `::before` 为白 0.55 / 深 0.60；关闭插件后 token
+    回到原生 `#232324`（深色）/ `#2c2c2e`；
   - 减少动效：CDP 模拟 `prefers-reduced-motion: reduce` 后，两次间隔 1.5 s 的
     `canvas.toDataURL()` 完全一致（静态帧）；
   - 性能：对话中 canvas 为 1512×775（DPR 1.0），`window.blur` 后 rAF 暂停，

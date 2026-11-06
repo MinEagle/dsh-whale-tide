@@ -76,6 +76,9 @@
   .answer-head{display:flex;align-items:center;gap:9px;color:var(--ink3);font-size:12px;margin-bottom:-2px}
   .answer-head .orb{width:18px;height:18px;border-radius:50%;background:linear-gradient(145deg,var(--accent),#9bbcff);color:#fff;display:grid;place-items:center;font-size:9px;font-weight:700}
   .text{position:relative;isolation:isolate;min-width:0}
+  .text::before{content:"";position:absolute;inset:-6px -10px;z-index:-1;border-radius:12px;background:rgba(255,255,255,.55);box-shadow:0 0 12px 6px rgba(255,255,255,.42);-webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px);pointer-events:none}
+  html[data-theme="dark"] .text::before{background:rgba(20,21,24,.60);box-shadow:0 0 12px 6px rgba(20,21,24,.50)}
+  .stage[data-phase="hero"] .text::before{display:none}
   .hero h1,.hero p,.hero .eyebrow,.hero .hint{text-shadow:0 0 2px rgba(255,255,255,.7),0 0 16px rgba(255,255,255,.5)}
   html[data-theme="dark"] .hero h1,html[data-theme="dark"] .hero p,html[data-theme="dark"] .hero .eyebrow,html[data-theme="dark"] .hero .hint{text-shadow:0 0 2px rgba(12,12,15,.85),0 0 18px rgba(12,12,15,.65)}
   .text p{margin:0 0 10px}
@@ -383,6 +386,9 @@ var World = class {
   bucketCount = new Uint16Array(0);
   bucketNext = new Int32Array(0);
   lastSpawn = 0;
+  conversation = false;
+  sidebarWidth = 0;
+  resident = null;
   tmp = { x: 0, y: 0 };
   resize(width, height, cellW, cellH) {
     const first = this.width === 0;
@@ -470,6 +476,20 @@ var World = class {
     }
     this.bucketNext = new Int32Array(this.fish.length);
   }
+  /** Park a whale in the sidebar for dsh-quiet's conversation mode. */
+  placeResident(sh, x, y, heading, length) {
+    if (!sh) return;
+    if (!sh.residentLength) sh.residentLength = sh.length;
+    const seg = Math.max(4, length) / (SHARK_NODES - 1);
+    sh.length = Math.max(4, length);
+    for (let k = 0; k < SHARK_NODES; k++) {
+      sh.nodes[k * 2] = x - Math.cos(heading) * seg * k;
+      sh.nodes[k * 2 + 1] = y - Math.sin(heading) * seg * k;
+    }
+    sh.heading = heading;
+    sh.speed = 22;
+    sh.turn = 0;
+  }
   splash(x, y) {
     this.events.push({ kind: "splash", x, y });
     const r = 240;
@@ -488,9 +508,9 @@ var World = class {
   step(dt, beatDt = dt) {
     this.time += dt;
     this.rebuildHash();
-    this.stepFish(dt);
+    if (!this.conversation) this.stepFish(dt);
     this.stepSharks(dt, beatDt);
-    this.respawn();
+    if (!this.conversation) this.respawn();
   }
   rebuildHash() {
     const size = this.perception;
@@ -660,6 +680,10 @@ var World = class {
       else if (f.x > W - m) ax -= (f.x - (W - m)) * 7;
       if (f.y < m) ay += (m - f.y) * 7;
       else if (f.y > H - m) ay -= (f.y - (H - m)) * 7;
+      if (this.conversation) {
+        ax += (f.x < W * 0.5 ? -1 : 1) * 280;
+        ay += (f.y < H * 0.5 ? -1 : 1) * 90;
+      }
       current(f.x, f.y, time, cur);
       ax += cur.x * 0.5 + (Math.random() - 0.5) * sp.jitter;
       ay += cur.y * 0.5 + (Math.random() - 0.5) * sp.jitter;
@@ -691,7 +715,12 @@ var World = class {
     const cxW = W / 2;
     const cyW = H / 2;
     for (const sh of sharks) {
-      const L = sh.length;
+      let L = sh.length;
+      if (this.conversation && sh === this.resident) {
+        if (!sh.residentLength) sh.residentLength = sh.length;
+        L = Math.min(sh.residentLength, Math.max(100, this.sidebarWidth * 0.55));
+        sh.length = L;
+      }
       const nodes = sh.nodes;
       const hx = nodes[0];
       const hy = nodes[1];
@@ -708,7 +737,26 @@ var World = class {
       const t = sh.target;
       let hunting = false;
       let closing = 0;
-      if (t && t.alive && sh.hunger > 0.3) {
+      if (this.conversation) {
+        if (sh === this.resident) {
+          // dsh-quiet keeps one whale in the sidebar while the conversation
+          // water is calm; its tail may cross the split slightly.
+          const tx = Math.max(36, this.sidebarWidth * 0.32);
+          const ty = H * 0.55;
+          const d = Math.hypot(tx - hx, ty - hy) || 1;
+          dx += (tx - hx) / d * 2.4;
+          dy += (ty - hy) / d * 2.4;
+        } else {
+          const distances = [hx, W - hx, hy, H - hy];
+          let edge = 0;
+          for (let i = 1; i < 4; i++) if (distances[i] < distances[edge]) edge = i;
+          const tx = edge === 0 ? -L * 2 : edge === 1 ? W + L * 2 : hx;
+          const ty = edge === 2 ? -L * 2 : edge === 3 ? H + L * 2 : hy;
+          const d = Math.hypot(tx - hx, ty - hy) || 1;
+          dx += (tx - hx) / d * 9;
+          dy += (ty - hy) / d * 9;
+        }
+      } else if (t && t.alive && sh.hunger > 0.3) {
         const tx = t.x + t.vx * 0.35 - hx;
         const ty = t.y + t.vy * 0.35 - hy;
         const d = Math.hypot(tx, ty) || 1;
@@ -765,7 +813,9 @@ var World = class {
       sh.heading += turned;
       sh.turn += (turned / dt - sh.turn) * Math.min(1, dt * 3);
       const cruise = 30 + L * 0.04;
-      const targetSpeed = hunting ? cruise * (1.45 + closing * 1.5) : cruise;
+      const targetSpeed = this.conversation
+        ? sh === this.resident ? cruise * 0.9 : cruise * 4
+        : hunting ? cruise * (1.45 + closing * 1.5) : cruise;
       sh.speed += (targetSpeed - sh.speed) * Math.min(1, dt * 1.1);
       sh.phase += beatDt * this.tailFrequency * (2 + (30 + L * 0.04) / 24);
       nodes[0] += Math.cos(sh.heading) * sh.speed * dt;
@@ -1193,6 +1243,11 @@ var AsciiRenderer = class {
   lowDetail = false;
   /** Conversation mode refreshes the whale mask every other frame. */
   maskTick = 0;
+  /** 1 = bright open sea, 0 = calm/empty conversation water. */
+  creatureAlpha = 1;
+  moodTarget = 1;
+  /** Conversation mode: draw only the sidebar resident and hide the school. */
+  residentOnly = false;
   /** Fish cells bucketed by brightness, so each bucket is one fillStyle. */
   fishBuckets = FISH_ALPHAS.map(() => []);
   fishStyles = FISH_ALPHAS.map((a) => `rgba(230,238,255,${a})`);
@@ -1275,7 +1330,8 @@ var AsciiRenderer = class {
     if (cols === 0) return;
     const t = world.time;
     this.consumeEvents(world);
-    if (!this.lowDetail || (this.maskTick++ & 1) === 0) this.rasterizeSharks(world.sharks, t);
+    const visibleSharks = this.residentOnly && world.resident ? [world.resident] : world.sharks;
+    if (!this.lowDetail || (this.maskTick++ & 1) === 0) this.rasterizeSharks(visibleSharks, t);
     this.depositWake(world);
     this.diffuse(dt);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1283,13 +1339,22 @@ var AsciiRenderer = class {
     ctx.drawImage(this.bg, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.markFish(world);
+    this.creatureAlpha += (this.moodTarget - this.creatureAlpha) * Math.min(1, dt * 3.2);
+    ctx.globalAlpha = this.residentOnly ? 0.45 : 0.45 + 0.55 * this.creatureAlpha;
     this.drawDots(t);
     ctx.font = `${this.glyphMode === "hanzi" ? 400 : 600} ${Math.round(ch * 0.74)}px ${this.fontFamily}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    this.drawHeat();
-    this.drawFish();
-    this.drawSharks(t);
+    if (this.residentOnly) {
+      ctx.globalAlpha = 1;
+      this.drawSharks(t);
+    } else {
+      ctx.globalAlpha = this.creatureAlpha;
+      this.drawHeat();
+      this.drawFish();
+      this.drawSharks(t);
+    }
+    ctx.globalAlpha = 1;
   }
   // ── simulation → field ──────────────────────────────────────────────
   cellIndex(x, y) {
@@ -2667,9 +2732,10 @@ var OceanEngine = class {
     }
 
     /**
-     * 0.4.0: the conversation default dropped from 0.16 to 0.10 and the
-     * per-message halo was removed. Migrate only the old default so custom
-     * values survive.
+     * 0.4.1: 0.10 turned out to be nearly invisible on real displays (blue at
+     * 10% over white is ~#eef0ff). 0.20 keeps the whales visible without any
+     * halo. Migrate both old defaults once, keyed by a schema marker, so a
+     * value the user chose afterwards is never rewritten.
      */
     function migrateSettings(value, schemaOld) {
       if (!value || typeof value !== "object" || Array.isArray(value)) return value;
@@ -2685,7 +2751,11 @@ var OceanEngine = class {
         const schemaOld = window.localStorage.getItem(SCHEMA_KEY) !== SCHEMA_VERSION;
         const raw = window.localStorage.getItem(STORAGE_KEY);
         if (!raw) {
-          try { window.localStorage.setItem(SCHEMA_KEY, SCHEMA_VERSION); } catch (error) { /* optional */ }
+          try {
+            window.localStorage.setItem(SCHEMA_KEY, SCHEMA_VERSION);
+          } catch (error) {
+            /* optional */
+          }
           return { ...DEFAULTS };
         }
         const parsed = JSON.parse(raw);
@@ -2694,7 +2764,9 @@ var OceanEngine = class {
           try {
             window.localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
             window.localStorage.setItem(SCHEMA_KEY, SCHEMA_VERSION);
-          } catch (error) { /* keep the in-memory migration */ }
+          } catch (error) {
+            /* keep the in-memory migration */
+          }
         }
         return normalizeSettings(migrated);
       } catch (error) {
@@ -2814,6 +2886,26 @@ var OceanEngine = class {
           settings.tailFrequency,
         );
         engine.renderer.fishRatio = ratio();
+        if (engine.renderer) engine.renderer.residentOnly = phase === "active";
+        if (engine.renderer) engine.renderer.moodTarget = phase === "active" ? 0 : 1;
+        if (engine.renderer) engine.renderer.creatureAlpha = phase === "active" ? 0 : 1;
+        if (engine.world) {
+          engine.world.conversation = phase === "active";
+          engine.world.resident = phase === "active" ? engine.world.sharks[0] : null;
+          engine.world.sidebarWidth = typeof opts.sidebarWidth === "function" ? opts.sidebarWidth() : 0;
+          if (phase === "active" && engine.world.resident) {
+            engine.world.placeResident(
+              engine.world.resident,
+              Math.max(50, engine.world.sidebarWidth * 0.38),
+              engine.world.height * 0.58,
+              Math.PI / 2,
+              Math.max(100, engine.world.sidebarWidth * 0.55),
+            );
+          }
+        }
+        if (typeof engine.setDetail === "function") engine.setDetail(phase === "active");
+        if (typeof engine.setMaxDpr === "function") engine.setMaxDpr(phase === "active" ? ACTIVE_DPR : MAX_DPR);
+        if (typeof engine.setMaxFps === "function") engine.setMaxFps(phase === "active" ? ACTIVE_FPS : HERO_FPS);
         const baseRender = engine.render.bind(engine);
         engine.render = (dt) => {
           baseRender(dt);
@@ -2878,6 +2970,9 @@ var OceanEngine = class {
       return {
         ready: Promise.resolve(),
         rebuild: build,
+        get engine() {
+          return engine;
+        },
         setSettings(next) {
           const before = { ...settings };
           Object.assign(settings, normalizeSettings({ ...settings, ...(next || {}) }));
@@ -2893,7 +2988,31 @@ var OceanEngine = class {
         },
         setPhase(next) {
           phase = next === "active" ? "active" : "hero";
-          if (engine) engine.renderer.fishRatio = ratio();
+          if (engine) {
+            engine.renderer.fishRatio = ratio();
+            if (engine.renderer) engine.renderer.residentOnly = phase === "active";
+            if (engine.renderer) engine.renderer.moodTarget = phase === "active" ? 0 : 1;
+            if (engine.renderer) engine.renderer.creatureAlpha = phase === "active" ? 0 : 1;
+            if (engine.world) {
+              const was = engine.world.conversation;
+              engine.world.conversation = phase === "active";
+              engine.world.resident = phase === "active" ? engine.world.sharks[0] : null;
+              engine.world.sidebarWidth = typeof opts.sidebarWidth === "function" ? opts.sidebarWidth() : 0;
+              if (phase === "active" && engine.world.resident) {
+                engine.world.placeResident(
+                  engine.world.resident,
+                  Math.max(50, engine.world.sidebarWidth * 0.38),
+                  engine.world.height * 0.58,
+                  Math.PI / 2,
+                  Math.max(100, engine.world.sidebarWidth * 0.55),
+                );
+              }
+              if (was && phase !== "active") engine.world.seed();
+            }
+            if (typeof engine.setDetail === "function") engine.setDetail(phase === "active");
+            if (typeof engine.setMaxDpr === "function") engine.setMaxDpr(phase === "active" ? ACTIVE_DPR : MAX_DPR);
+            if (typeof engine.setMaxFps === "function") engine.setMaxFps(phase === "active" ? ACTIVE_FPS : HERO_FPS);
+          }
         },
         destroy() {
           disposed = true;
@@ -3063,6 +3182,7 @@ var OceanEngine = class {
       theme: themeForOcean(),
       phase,
       reducedMotion: reduced,
+      sidebarWidth: () => 260,
       onStats: (s) => {
         statsEl.textContent = s.fps + " fps · 鱼 " + s.fish + "/" + s.targetFish + " · 鲸 " + s.whales + " · " + s.cells + " 格" + (s.reducedMotion ? " · 静态" : "");
       },

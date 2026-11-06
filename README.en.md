@@ -73,11 +73,11 @@ From npm (once published):
 dsh plugin --profile <your-profile> add dsh-whale-tide
 ```
 
-From the 0.5.0 GitHub Release tarball:
+From the 0.6.0 GitHub Release tarball:
 
 ```bash
 dsh plugin --profile <your-profile> add \
-  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.5.0/dsh-whale-tide-0.5.0.tgz
+  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.6.0/dsh-whale-tide-0.6.0.tgz
 ```
 
 From a local checkout:
@@ -259,7 +259,7 @@ See [docs/design.md](docs/design.md).
   the `hero` state instead of breaking.
 - The UI exposes 24 settings from upstream; internal steering and hunger
   constants stay in the engine.
-- 0.5.0 is available as a GitHub Release tarball but not yet on the npm
+- 0.6.0 is available as a GitHub Release tarball but not yet on the npm
   registry; the repository also includes a local directory install and a
   packed `dist/*.tgz`.
 
