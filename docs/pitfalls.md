@@ -360,3 +360,18 @@ return luminance < .45 ? "dark" : "light";
   磨砂三件套。
 
 `test/settings.test.js` 里的默认值断言直接对着上游 0.1.5 的数值写，防止再次漏项。
+
+## 26. 汉字模式切过去还是等宽字符（代码缺陷）
+
+`glyphMode` 从 `ascii` 切到 `hanzi` 时，适配层只改了 `renderer.glyphMode` 并
+`resize()`，没有重新读取 canvas 的 `font-family`；字体来自 CSS
+`[data-glyph="hanzi"] canvas{font-family:...serif}`，而 `applyFont()` 只在
+`build()` 里调用过一次，于是字形仍是等宽字体，汉字被系统按 mono 渲染成方框/细字。
+
+修复（0.2.1）：实时切换分支里先 `applyFont()`（重新读 `getComputedStyle(canvas)`），
+再 `resize()`；因为挂载层在 `syncAll()` 中先写 `data-glyph` 再调 `setSettings()`，
+读到的就是新的 serif 字体栈。
+
+验证：真实 DSH 中把「字符风格」切到汉字后，canvas 字体为
+`"Songti SC","Noto Serif SC",…serif`，层属性 `data-glyph="hanzi"`，画布按方
+格重排（12285 → 11856 格），恢复默认后回到 ASCII 与等宽字体。

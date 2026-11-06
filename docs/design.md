@@ -263,6 +263,8 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
   conversationDensity / followTheme`）。
 - **生效方式**分两类：
   - `count / species / size / fishCount` 需要重建 `World`，适配层 `build()`；
+  - `glyphMode` 实时切换：改 `renderer.glyphMode` → `applyFont()` 重新读取
+    canvas 的 `font-family`（ASCII 等宽 / 汉字衬线）→ `resize()`（汉字用方格）；
   - 其余通过 `setAppearance()`、`renderer.fishRatio`、`renderer.gridScale +
     resize()`、CSS 变量（`--dshwt-blur`、`--dshwt-glass-opacity`）实时更新。
 
@@ -333,6 +335,10 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
     磨砂 `rgba(24,24,26,.45)`、画布深色调色板全部生效；切回浅色恢复；
   - 卸载：关闭插件后 layer / canvas / style / `--dshwt-*` 变量 / body 属性
     全部消失，侧栏 token 回到 `#f9fafb`、`--dsw-alias-bg-base` 回到 `#fff`；
+  - 字符风格：切到汉字后 canvas 字体为 serif 栈、层属性 `data-glyph="hanzi"`、
+    格子重排为 11856 格；恢复默认回到 ASCII；
+  - 减少动效：CDP 模拟 `prefers-reduced-motion: reduce` 后，两次间隔 1.5 s 的
+    `canvas.toDataURL()` 完全一致（静态帧）；
   - 设置里的“显示背景”开关：关闭后 `body` 属性消失、层隐藏、界面恢复原生；
     再开启后层与属性恢复；
   - 关闭插件：layer / canvas / style / body 属性全部消失，body 与侧栏恢复原生底色；

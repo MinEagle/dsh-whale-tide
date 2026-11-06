@@ -2762,6 +2762,7 @@ var OceanEngine = class {
         engine.renderer.fishRatio = ratio();
         if (engine.renderer.glyphMode !== settings.glyphMode) {
           engine.renderer.glyphMode = settings.glyphMode;
+          applyFont();
           engine.resize();
         }
         if (Math.abs(engine.renderer.gridScale - settings.gridScale) > 1e-6) {
@@ -2825,7 +2826,6 @@ var OceanEngine = class {
         },
       };
     }
-
 
 /* ===================== preview harness (not shipped) ===================== */
 (function () {

@@ -1,0 +1,460 @@
+    /* =====================================================================
+     * Backdrop lifecycle
+     * ===================================================================*/
+    function mountBackdrop(ctx, store) {
+      const layer = document.createElement("div");
+      layer.className = "dsh-whale-tide-backdrop";
+      layer.setAttribute("aria-hidden", "true");
+      const canvas = document.createElement("canvas");
+      layer.appendChild(canvas);
+      document.body.prepend(layer);
+
+      let disposed = false;
+      let ocean = null;
+      let phase = readPhase();
+      let uiScheme = "light";
+      let oceanScheme = "light";
+      let raf = 0;
+      let interval = 0;
+      let phaseObserver = null;
+      let themeObserver = null;
+      let bodyObserver = null;
+      let offTheme = null;
+      let motionQuery = null;
+      let unsubscribe = null;
+      let lastSettings = store.get();
+
+      const themeService = (() => {
+        try {
+          return ctx && typeof ctx.get === "function" ? ctx.get("theme") : null;
+        } catch (error) {
+          return null;
+        }
+      })();
+
+      function resolveOceanScheme() {
+        return store.get().followTheme ? uiScheme : readPinnedScheme() || uiScheme;
+      }
+
+      function applyCssVars() {
+        const settings = store.get();
+        // The composer lives inside #root, so the variables must sit on body
+        // to reach it; names are plugin-scoped and removed on dispose.
+        const body = document.body;
+        body.style.setProperty("--dshwt-blur", String(settings.blur) + "px");
+        body.style.setProperty("--dshwt-glass-opacity", String(settings.glassOpacity));
+        if (settings.glyphMode === "hanzi") layer.dataset.glyph = "hanzi";
+        else delete layer.dataset.glyph;
+      }
+
+      function applyAttrs() {
+        const settings = store.get();
+        const body = document.body;
+        if (!settings.enabled || disposed) {
+          delete body.dataset.dshWhaleTide;
+          delete body.dataset.dshWhaleTideScheme;
+          delete body.dataset.dshWhaleTideUi;
+          delete body.dataset.dshWhaleTidePhase;
+          delete body.dataset.dshWhaleTideGlass;
+          return;
+        }
+        body.dataset.dshWhaleTide = "on";
+        body.dataset.dshWhaleTideScheme = oceanScheme;
+        body.dataset.dshWhaleTideUi = uiScheme;
+        body.dataset.dshWhaleTidePhase = phase;
+        if (settings.glass) body.dataset.dshWhaleTideGlass = "on";
+        else delete body.dataset.dshWhaleTideGlass;
+      }
+
+      function applyOpacity() {
+        const settings = store.get();
+        if (!settings.enabled || disposed) {
+          layer.style.opacity = "0";
+          return;
+        }
+        const base = phase === "active" ? settings.conversationOpacity : 1;
+        layer.style.opacity = String(Math.max(0, Math.min(1, base * settings.opacity)));
+      }
+
+      function applyScheme() {
+        const nextUi = readHostScheme(themeService);
+        const nextOcean = store.get().followTheme ? nextUi : readPinnedScheme() || nextUi;
+        const changed = nextOcean !== oceanScheme;
+        uiScheme = nextUi;
+        oceanScheme = nextOcean;
+        if (ocean && changed) ocean.setTheme(oceanScheme);
+        applyAttrs();
+      }
+
+      function ensureOcean() {
+        if (disposed || ocean || !store.get().enabled) return;
+        ocean = createOcean(canvas, {
+          settings: store.get(),
+          theme: oceanScheme,
+          phase,
+          reducedMotion: prefersReducedMotion(),
+          onStats: null,
+        });
+      }
+
+      function destroyOcean() {
+        if (!ocean) return;
+        try {
+          ocean.destroy();
+        } catch (error) {
+          /* already gone */
+        }
+        ocean = null;
+      }
+
+      function syncAll() {
+        if (disposed) return;
+        const settings = store.get();
+        if (!settings.enabled) {
+          destroyOcean();
+          layer.style.display = "none";
+          applyAttrs();
+          applyOpacity();
+          return;
+        }
+        layer.style.display = "block";
+        applyScheme();
+        applyCssVars();
+        applyAttrs();
+        applyOpacity();
+        ensureOcean();
+        if (ocean) ocean.setSettings(settings);
+        if (ocean) ocean.setPhase(phase);
+        if (ocean) ocean.setTheme(oceanScheme);
+      }
+
+      function applyPhase() {
+        if (disposed) return;
+        const next = readPhase();
+        if (next !== phase) {
+          phase = next;
+          if (ocean) ocean.setPhase(phase);
+          applyAttrs();
+        }
+        applyOpacity();
+      }
+
+      function onStoreChange() {
+        if (disposed) return;
+        const settings = store.get();
+        if (lastSettings.followTheme && !settings.followTheme) {
+          writePinnedScheme(readHostScheme(themeService));
+        }
+        lastSettings = settings;
+        syncAll();
+      }
+
+      function schedulePhase() {
+        if (disposed || raf) return;
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          applyPhase();
+        });
+      }
+
+      syncAll();
+
+      try {
+        phaseObserver = new MutationObserver(schedulePhase);
+        phaseObserver.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["data-content-phase"],
+        });
+      } catch (error) {
+        /* the interval still covers phase changes */
+      }
+
+      try {
+        themeObserver = new MutationObserver(() => {
+          applyScheme();
+          if (ocean) ocean.setTheme(oceanScheme);
+        });
+        themeObserver.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["class", "style", "data-theme", "data-color-scheme", "data-ds-theme-source"],
+        });
+      } catch (error) {
+        /* optional */
+      }
+
+      try {
+        bodyObserver = new MutationObserver(() => {
+          applyScheme();
+          if (ocean) ocean.setTheme(oceanScheme);
+        });
+        bodyObserver.observe(document.body, {
+          attributes: true,
+          attributeFilter: ["class", "data-ds-dark-theme"],
+        });
+      } catch (error) {
+        /* optional */
+      }
+
+      interval = window.setInterval(applyPhase, 500);
+
+      try {
+        motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
+        motionQuery.addEventListener("change", applyPhase);
+      } catch (error) {
+        motionQuery = null;
+      }
+
+      try {
+        if (themeService && typeof ctx.on === "function") {
+          offTheme = ctx.on("theme/change", () => {
+            applyScheme();
+            if (ocean) ocean.setTheme(oceanScheme);
+          });
+        }
+      } catch (error) {
+        offTheme = null;
+      }
+
+      unsubscribe = store.subscribe(onStoreChange);
+
+      return function dispose() {
+        disposed = true;
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+        if (interval) window.clearInterval(interval);
+        interval = 0;
+        if (phaseObserver) phaseObserver.disconnect();
+        if (themeObserver) themeObserver.disconnect();
+        if (bodyObserver) bodyObserver.disconnect();
+        if (offTheme && typeof offTheme === "function") {
+          try {
+            offTheme();
+          } catch (error) {
+            /* ignore */
+          }
+        }
+        if (motionQuery) {
+          try {
+            motionQuery.removeEventListener("change", applyPhase);
+          } catch (error) {
+            /* ignore */
+          }
+        }
+        if (unsubscribe) unsubscribe();
+        destroyOcean();
+        layer.remove();
+        const body = document.body;
+        body.style.removeProperty("--dshwt-blur");
+        body.style.removeProperty("--dshwt-glass-opacity");
+        delete body.dataset.dshWhaleTide;
+        delete body.dataset.dshWhaleTideScheme;
+        delete body.dataset.dshWhaleTideUi;
+        delete body.dataset.dshWhaleTidePhase;
+        delete body.dataset.dshWhaleTideGlass;
+      };
+    }
+
+    /* =====================================================================
+     * Settings section
+     * ===================================================================*/
+    function formatValue(key, value) {
+      if (key === "speed") return Number(value).toFixed(2) + "×";
+      if (key === "blur") return Math.round(value) + "px";
+      if (["count", "fishCount"].includes(key)) return String(Math.round(value));
+      if (key === "size" || key === "gridScale") return Number(value).toFixed(1) + "×";
+      return Number(value).toFixed(2);
+    }
+
+    function optionLabel(key, value) {
+      if (key === "species") return value === "orca" ? t("orca") : t("humpback");
+      if (key === "eyeColor") return value === "black" ? t("eyeBlack") : value === "white" ? t("eyeWhite") : t("eyePrimary");
+      if (key === "glyphMode") return value === "hanzi" ? t("glyphHanzi") : t("glyphAscii");
+      return value;
+    }
+
+    function SettingsPanel(props) {
+      const store = props.store;
+      const [value, setValue] = React.useState(store.get());
+      const [status, setStatus] = React.useState("");
+
+      React.useEffect(() => store.subscribe((next) => setValue(next)), [store]);
+
+      function save(patch) {
+        const next = store.set(patch);
+        setValue(next);
+        setStatus(store.storageError ? "saveError" : "saved");
+      }
+
+      function reset() {
+        setValue(store.reset());
+        setStatus("resetDone");
+      }
+
+      function hintKey(key) {
+        return "hint" + key.charAt(0).toUpperCase() + key.slice(1);
+      }
+
+      function row(key, control) {
+        return h(
+          "div",
+          { className: "dshwt-row", key },
+          h(
+            "div",
+            { className: "dshwt-label" },
+            h("span", { className: "dshwt-name" }, t(key)),
+            h("span", { className: "dshwt-hint" }, t(hintKey(key))),
+          ),
+          h("div", { className: "dshwt-control" }, control),
+        );
+      }
+
+      function switchControl(key) {
+        return h("button", {
+          type: "button",
+          role: "switch",
+          "aria-checked": value[key] ? "true" : "false",
+          "aria-label": t(key),
+          className: "dshwt-switch",
+          onClick: () => save({ [key]: !value[key] }),
+        });
+      }
+
+      function rangeControl(key) {
+        const range = RANGES[key];
+        return h(
+          "div",
+          { className: "dshwt-range" },
+          h("input", {
+            type: "range",
+            min: range[0],
+            max: range[1],
+            step: range[2],
+            value: value[key],
+            "aria-label": t(key),
+            onChange: (event) => {
+              const number = Number(event.target.value);
+              if (Number.isFinite(number)) save({ [key]: number });
+            },
+          }),
+          h("span", { className: "dshwt-value" }, formatValue(key, value[key])),
+        );
+      }
+
+      function selectControl(key) {
+        return h(
+          "select",
+          {
+            className: "dshwt-select",
+            value: value[key],
+            "aria-label": t(key),
+            onChange: (event) => save({ [key]: event.target.value }),
+          },
+          OPTIONS[key].map((option) => h("option", { key: option, value: option }, optionLabel(key, option))),
+        );
+      }
+
+      function control(key) {
+        if (BOOLEAN_KEYS.includes(key)) return switchControl(key);
+        if (OPTIONS[key]) return selectControl(key);
+        if (key === "color") {
+          return h(
+            "div",
+            { className: "dshwt-color" },
+            h("input", {
+              type: "color",
+              value: value.color,
+              "aria-label": t("color"),
+              onChange: (event) => save({ color: event.target.value }),
+            }),
+            h("code", null, value.color),
+          );
+        }
+        return rangeControl(key);
+      }
+
+      const statusText = status ? t(status) : "";
+
+      return h(
+        "div",
+        { className: "dshwt-settings" },
+        h(
+          "div",
+          { className: "dshwt-head" },
+          h("h2", null, t("title")),
+          h("p", null, t("sectionDescription")),
+        ),
+        GROUPS.map((group) =>
+          h(
+            "div",
+            { className: "dshwt-group", key: group.id },
+            h("div", { className: "dshwt-group-title" }, t("group" + group.id.charAt(0).toUpperCase() + group.id.slice(1))),
+            h("div", { className: "dshwt-card" }, group.keys.map((key) => row(key, control(key)))),
+          ),
+        ),
+        h(
+          "div",
+          { className: "dshwt-actions" },
+          h("button", { type: "button", className: "dshwt-button", onClick: reset }, t("reset")),
+          h(
+            "span",
+            { className: "dshwt-status", "aria-live": "polite", "data-error": status === "saveError" ? "" : undefined },
+            statusText,
+          ),
+        ),
+      );
+    }
+
+    function registerSettings(ctx, store) {
+      try {
+        if (!ctx.slots || typeof ctx.slots.inject !== "function" || typeof ctx.slots.register !== "function") {
+          console.warn("[dsh-whale-tide] settings slot unavailable; background still active");
+          return;
+        }
+        ctx.effect(
+          () =>
+            ctx.slots.inject("settings.section", () =>
+              ctx.slots.register(
+                {
+                  name: "settings.section",
+                  id: "dsh-whale-tide",
+                  order: 57,
+                  locale: NS,
+                  label: () => t("title"),
+                },
+                (props) => h(SettingsPanel, { ...props, store }),
+              ),
+            ),
+          "dsh-whale-tide: settings section",
+        );
+      } catch (error) {
+        console.error("[dsh-whale-tide] failed to register settings section", error);
+      }
+    }
+
+    /* =====================================================================
+     * Registration
+     * ===================================================================*/
+    const inject = ["slots", "locale"];
+
+    function apply(ctx) {
+      installStyles(ctx);
+      installLocale(ctx);
+
+      const store = createStore();
+
+      try {
+        ctx.effect(() => mountBackdrop(ctx, store), "dsh-whale-tide: backdrop");
+      } catch (error) {
+        console.error("[dsh-whale-tide] backdrop failed to mount", error, error && error.stack);
+      }
+
+      registerSettings(ctx, store);
+    }
+
+    const module = { exports: {} };
+    module.exports = { inject, apply };
+    return module.exports;
+  },
+});

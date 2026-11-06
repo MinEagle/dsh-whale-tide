@@ -1,0 +1,26 @@
+/*! Ocean engine adapted from dsh-ascii-whales 0.1.5 (MIT, (c) 2026 Chael-Chael);
+    it vendors ascii-sharks (MIT, (c) 2026 drewdi, commit c521e24a...) and
+    ascii-kanji-sharks. See THIRD_PARTY_NOTICES.md and vendor/. */
+/**
+ * dsh-whale-tide — browser half.
+ *
+ * Plain JavaScript, no build step. The factory registers under the exact
+ * package name ("dsh-whale-tide") so the Harness client module loader can
+ * match the package row; a mismatch produces the "loaded without registering"
+ * activation failure.
+ *
+ * Everything the plugin adds is created inside apply() and removed by its
+ * ctx.effect cleanup: the fixed backdrop layer, the canvas engine, the
+ * stylesheet, the theme/phase observers, the settings store subscription and
+ * the settings section.
+ */
+
+window.__ModuleLoader__.load({
+  id: "dsh-whale-tide",
+  factory(require) {
+    "use strict";
+
+    const React = require("react");
+    const h = React.createElement;
+
+    

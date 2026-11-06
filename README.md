@@ -48,11 +48,11 @@ DeepSeek Harness（DSH）的动态背景插件：三头座头鲸与鱼群在**�
 dsh plugin --profile <你的 profile> add dsh-whale-tide
 ```
 
-从 GitHub Release 的 tgz 安装（0.2.0 已发布）：
+从 GitHub Release 的 tgz 安装（0.2.1 已发布）：
 
 ```bash
 dsh plugin --profile <你的 profile> add \
-  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.2.0/dsh-whale-tide-0.2.0.tgz
+  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.2.1/dsh-whale-tide-0.2.1.tgz
 ```
 
 从本地目录安装：
@@ -219,7 +219,7 @@ dsh-whale-tide/
 - 0.2.0 补齐了上游全部 24 项设置，并修正深色模式；对话退潮沿用 dsh-quiet 的整层透明度 + 继承式正文柔光。
 - DSH 内部的会话 DOM 不是公开 API。相位检测只用 `data-content-phase` 与 `data-conversation-*` 属性；若未来 DSH 改动这些属性，插件会退化到「始终 hero」，不会报错或破坏页面。
 - 设置按上游参数暴露 24 项；引擎内部还有追逐/饥饿等未暴露的常量。
-- 0.2.0 已发布 GitHub Release（含 tgz），但尚未发布到 npm registry；仓库内也附可直接安装的本地目录与 `dist/*.tgz`。
+- 0.2.1 已发布 GitHub Release（含 tgz），但尚未发布到 npm registry；仓库内也附可直接安装的本地目录与 `dist/*.tgz`。
 
 ## License
 
