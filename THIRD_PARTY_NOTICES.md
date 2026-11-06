@@ -8,6 +8,13 @@ The backdrop, ocean engine, sidebar glass, conversation model, prose halo and
 blur-to-clear streaming renderer are retained from that project. A copy of its
 MIT license is in `LICENSE.quiet`.
 
+## dsh-ascii-whales
+
+The five-species fish model, depth/brightness buckets, spatial schooling ideas
+and eat/respawn behavior are adapted from **dsh-ascii-whales** by
+**Chael-Chael** (https://github.com/Chael-Chael/dsh-ascii-whales), MIT License.
+A copy of its MIT license is in `LICENSE.dsh-ascii-whales`.
+
 ## ascii-sharks
 
 The character-ocean engine embedded in dsh-quiet is adapted from

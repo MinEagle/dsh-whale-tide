@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>dsh-quiet · 海洋引擎预览</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font:14px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:#20242c;background:#fff}
+  #ocean{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+  .sidebar{position:fixed;top:0;bottom:0;left:0;width:240px;border-right:1px solid #ebedf0;padding:24px 16px;z-index:1}
+  .logo{font-weight:700;font-size:18px;margin-bottom:28px}
+  .item{padding:10px;border-radius:8px}
+  .active{background:rgba(235,237,241,.82)}
+  .header{position:fixed;top:0;left:240px;right:0;height:52px;padding:15px 28px;border-bottom:1px solid #ebedf0;z-index:1}
+  .content{position:absolute;top:85px;left:240px;right:0;bottom:0;z-index:1}
+  .thread{width:min(720px,80%);margin:auto;line-height:1.85}
+  .question{background:#eff3ff;border-radius:14px;padding:10px 15px;float:right}
+  .answer{clear:both;padding:35px 0 10px}
+  .answer p{background:rgba(255,255,255,.66);box-shadow:0 0 30px 18px rgba(255,255,255,.66);border-radius:12px}
+  .composer{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);width:min(720px,80%);padding:17px;background:#fff;border:1px solid #e8eaee;border-radius:22px;color:#a3a8b2;box-shadow:0 4px 24px rgba(31,35,41,.06)}
+  .hud{position:fixed;right:16px;bottom:16px;z-index:9;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;font-size:12px}
+  .hud button{font:inherit;padding:7px 11px;border:1px solid #dfe3ea;border-radius:9px;background:#fff;cursor:pointer}
+  .hud button:hover{background:#f5f7fa}
+  .hud .on{background:#20242c;color:#fff;border-color:#20242c}
+  body.dark{background:#141518;color:#e6e8ec}
+  body.dark .sidebar,body.dark .header{border-color:#2a2c32}
+  body.dark .active{background:#24262c}
+  body.dark .question{background:#1e2738}
+  body.dark .answer p{background:rgba(20,21,24,.72);box-shadow:0 0 30px 18px rgba(20,21,24,.68)}
+  body.dark .composer{background:#1b1c20;border-color:#2c2e35;color:#8b909a}
+  body.dark .hud button{background:#1f2127;border-color:#33363e;color:#dfe2e8}
+  body.dark .hud .on{background:#e6e8ec;color:#141518}
+</style>
+</head>
+<body>
+<canvas id="ocean"></canvas>
+<aside class="sidebar">
+  <div class="logo">◉ deepseek <small>HARNESS</small></div>
+  <div class="item active">＋ 新会话</div>
+  <div class="item">◇ 插件</div>
+  <div class="item">◷ 自动化任务</div>
+  <div class="item">··· 更多</div>
+  <div class="item" style="margin-top:30px;color:#9297a0">工作区</div>
+  <div class="item">默认工作区</div>
+</aside>
+<header class="header">新对话</header>
+<main class="content">
+  <div class="thread">
+    <div class="question">帮我整理一下今天的工作重点。</div>
+    <div class="answer">
+      <p>我们可以先梳理待办事项，再按照紧急程度和所需时间安排顺序。</p>
+      <p>背景里的海洋与鲸群会缓慢游动，文字区域保留了淡化处理，便于长时间阅读。</p>
+    </div>
+  </div>
+  <div class="composer">描述你想要构建的内容，或提出一个问题…</div>
+</main>
+<div class="hud">
+  <button data-kind="hammer">锤头鲨</button>
+  <button data-kind="thresher">长尾鲨</button>
+  <button id="clear">清空访客</button>
+  <button id="conv">切换为「对话中」</button>
+  <button id="dark">深色</button>
+  <button id="reduced">减少动效</button>
+  <span id="state"></span>
+</div>
+<script src="ocean-bg.js"></script>
+<script>
+  const HERO = !location.search.includes("chat");
+  document.body.classList.toggle("dark", location.search.includes("dark"));
+  let ocean = null;
+
+  function mount() {
+    if (ocean) ocean.destroy();
+    ocean = DSOcean.createOcean(document.getElementById("ocean"), {
+      theme: document.body.classList.contains("dark") ? "dark" : "light",
+      clickRipple: false,
+      splitX: () => 240,
+      columnCenter: () => 240 + (innerWidth - 240) / 2,
+      chatTop: () => 52,
+    });
+    ocean.setConversation(!HERO, true);
+  }
+  mount();
+  window.ocean = ocean;
+  const params = new URLSearchParams(location.search);
+
+  const place = (kind, x, y) => {
+    const v = ocean.debug.spawnVisitor(kind);
+    if (!v) return;
+    v.x = x; v.y = y; v.h = -0.04;
+    v.speed = 0;
+    ocean.debug.render();
+  };
+
+  document.querySelectorAll("[data-kind]").forEach((b) => b.onclick = () => {
+    ocean.debug.visitors.length = 0;
+    place(b.dataset.kind, innerWidth * 0.62, innerHeight * 0.55);
+  });
+  document.getElementById("clear").onclick = () => { ocean.debug.visitors.length = 0; };
+  document.getElementById("conv").onclick = (e) => {
+    const on = !ocean.debug.conversationMode;
+    ocean.setConversation(on, false);
+    e.currentTarget.textContent = on ? "切换为「新对话」" : "切换为「对话中」";
+    e.currentTarget.classList.toggle("on", on);
+  };
+  document.getElementById("dark").onclick = (e) => {
+    document.body.classList.toggle("dark");
+    ocean.setTheme(document.body.classList.contains("dark") ? "dark" : "light");
+    e.currentTarget.classList.toggle("on");
+  };
+  document.getElementById("reduced").onclick = (e) => {
+    ocean.destroy();
+    ocean = DSOcean.createOcean(document.getElementById("ocean"), {
+      theme: document.body.classList.contains("dark") ? "dark" : "light",
+      clickRipple: false, reducedMotion: true,
+      splitX: () => 240,
+      columnCenter: () => 240 + (innerWidth - 240) / 2,
+      chatTop: () => 52,
+    });
+    e.currentTarget.classList.toggle("on");
+  };
+  // ?only=1：把鲸群和鱼群挪出画面，只看访客本身
+  if (params.get("only")) {
+    const d = ocean.debug;
+    d.whales.forEach((w) => {
+      w.exitMode = "away";
+      for (let i = 0; i < w.nodes.length; i += 2) { w.nodes[i] = -6000; w.nodes[i + 1] = -6000; }
+      for (let i = 0; i < w.spine.length; i += 2) { w.spine[i] = -6000; w.spine[i + 1] = -6000; }
+    });
+    d.fish.length = 0;
+  }
+  // ?kind=giant 时直接摆到画面中间，方便截图
+  const kind = params.get("kind");
+  if (kind) place(kind, innerWidth * 0.62, innerHeight * 0.55);
+
+  // ?zoom=1：把访客周围 320×240 的区域放大 3 倍贴在右下角，便于看清字符排布
+  if (params.get("zoom")) {
+    const panel = document.createElement("div");
+    panel.style.cssText = "position:fixed;right:16px;top:72px;z-index:9;background:#fff;border:1px solid #dfe3ea;border-radius:12px;padding:8px;box-shadow:0 8px 28px rgba(20,24,32,.12)";
+    const zc = document.createElement("canvas");
+    zc.width = 960; zc.height = 720;
+    zc.style.cssText = "display:block;width:480px;height:360px;image-rendering:pixelated";
+    panel.append(zc);
+    document.body.append(panel);
+    const zx = zc.getContext("2d");
+    zx.imageSmoothingEnabled = false;
+    setInterval(() => {
+      const v = ocean.debug.visitors[0];
+      if (!v) return;
+      const dpr = window.devicePixelRatio || 1, cv = document.getElementById("ocean");
+      zx.fillStyle = "#fff"; zx.fillRect(0, 0, zc.width, zc.height);
+      zx.drawImage(cv, (v.x - 80) * dpr, (v.y - 60) * dpr, 160 * dpr, 120 * dpr, 0, 0, zc.width, zc.height);
+    }, 120);
+  }
+  setInterval(() => {
+    const d = ocean.debug, v = d.visitors[0];
+    let soft = 0, tent = 0, body = 0, fin = 0, edge = 0;
+    const cells = d.cells, wf = cells.wFlag;
+    if (v) {
+      const c0 = Math.floor((v.x - v.len * 1.15) / cells.cw), c1 = Math.ceil((v.x + v.len * 0.2) / cells.cw);
+      const r0 = Math.floor((v.y - v.len * 0.5) / cells.ch), r1 = Math.ceil((v.y + v.len * 0.5) / cells.ch);
+      for (let r = Math.max(0, r0); r <= Math.min(cells.rows - 1, r1); r++)
+        for (let c = Math.max(0, c0); c <= Math.min(cells.cols - 1, c1); c++) {
+          const f = wf[r * cells.cols + c];
+          if (f === 1) body++; else if (f === 3) fin++; else if (f === 2) edge++; else if (f === 6) soft++; else if (f === 7) tent++;
+        }
+    }
+    document.getElementById("state").textContent =
+      `visitors: ${d.visitors.map((x) => x.kind).join(",") || "—"}${v ? ` @${Math.round(v.x)},${Math.round(v.y)}` : ""} · 局部 ${soft}软/${tent}须/${body}身/${fin}鳍/${edge}边 · ${d.W}×${d.H}`;
+  }, 400);
+</script>
+</body>
+</html>

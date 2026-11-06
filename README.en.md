@@ -11,6 +11,7 @@ streaming replies, plus a settings panel.
 ## Features
 
 - **Quiet ocean** — low-contrast ASCII sea with procedurally built whales.
+- **Rich fish schools (from dsh-ascii-whales)** — five species (sardine, anchovy, silverside, mackerel, goby), about 100 fish by default, with depth, turn/alarm glints, schooling and whale predation/respawn.
 - **Conversation ebb** — creatures roam the sidebar and chat while empty;
   entering a conversation sends them to the edges, leaving calm water and at
   most one resident whale behind the sidebar glass.
@@ -28,7 +29,7 @@ streaming replies, plus a settings panel.
 | Backdrop | Opacity | 1.00 | 0–1 |
 | Backdrop | Opacity in conversation | 1.00 | 0–1 |
 | Motion | Swimming speed | 1.0× | 0.2–2 |
-| Motion | Fish density | 1.0× | 0.2–2 |
+| Motion | Fish density | 1.0× (about 100 fish) | 0.2–2 |
 | Motion | Whale count | 3 | 1–3 |
 | Interface | Sidebar blur | 6 px | 0–20 |
 | Interface | Frosted composer | on | on / off |
