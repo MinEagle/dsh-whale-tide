@@ -1,0 +1,8 @@
+docs/
+tools/
+test/
+dist/
+_research/
+*.log
+.DS_Store
+node_modules/

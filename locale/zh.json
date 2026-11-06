@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "title": "鲸汐",
+    "description": "纯代码绘制的鲸鱼与鱼群在界面背后游动；进入对话时自动退潮，让正文保持清晰。"
+  },
+  "title": "鲸汐",
+  "description": "让鲸群与鱼群在界面背后游动，进入对话时自动退潮。",
+  "sectionDescription": "调整鲸群与鱼群的密度、速度、透明度与配色。偏好保存在当前浏览器。",
+  "enabled": "显示背景",
+  "density": "生物密度",
+  "speed": "游动速度",
+  "opacity": "整体透明度",
+  "conversationOpacity": "对话中透明度",
+  "conversationDensity": "对话中生物比例",
+  "color": "主色",
+  "followTheme": "深/浅色跟随",
+  "hintEnabled": "关闭后移除背景层，界面恢复原生样式",
+  "hintDensity": "鱼群数量；设为 0 只保留鲸鱼",
+  "hintSpeed": "0.1–3 倍速",
+  "hintOpacity": "空会话中的背景不透明度",
+  "hintConversationOpacity": "进入对话后的背景不透明度（默认 0.16）",
+  "hintConversationDensity": "进入对话后保留的鱼群比例（默认 0.3）",
+  "hintColor": "鲸鱼、鱼群与尾迹的主色",
+  "hintFollowTheme": "开启时跟随 DSH 深浅色；关闭时固定为关闭时的深浅色",
+  "reset": "恢复默认",
+  "saved": "已保存",
+  "saveError": "无法写入本地存储，本次修改仅在当前页面生效",
+  "resetDone": "已恢复默认"
+}

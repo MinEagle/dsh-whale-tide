@@ -1,0 +1,6 @@
+# Bundle patch layer: insert the plugin row into the profile's plugin stack.
+# The row id and name must both equal the package name; the browser bundle
+# registers itself under the same id (see lib/client.js).
+- insert:
+    - id: dsh-whale-tide
+      name: dsh-whale-tide

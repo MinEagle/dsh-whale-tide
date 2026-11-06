@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "title": "Whale Tide",
+    "description": "A code-drawn whale and fish schools drift behind the interface and ebb in conversation so text stays readable."
+  },
+  "title": "Whale Tide",
+  "description": "A whale and fish schools drift behind the interface, ebbing in conversation.",
+  "sectionDescription": "Tune density, speed, opacity and colour. Preferences stay in this browser.",
+  "enabled": "Show background",
+  "density": "Creature density",
+  "speed": "Swimming speed",
+  "opacity": "Opacity",
+  "conversationOpacity": "Opacity in conversation",
+  "conversationDensity": "Creature ratio in conversation",
+  "color": "Accent color",
+  "followTheme": "Follow light / dark",
+  "hintEnabled": "Turn off to remove the layer and restore the native interface.",
+  "hintDensity": "Fish population. At 0 only the whale remains.",
+  "hintSpeed": "0.1× to 3× the base swimming speed.",
+  "hintOpacity": "Layer opacity in an empty conversation.",
+  "hintConversationOpacity": "Layer opacity while a conversation is active (default 0.16).",
+  "hintConversationDensity": "Share of fish kept while a conversation is active (default 0.3).",
+  "hintColor": "Tints the whale, fish and wake.",
+  "hintFollowTheme": "On: follow the DSH theme. Off: pin the light/dark mode active when you switch it off.",
+  "reset": "Restore defaults",
+  "saved": "Saved",
+  "saveError": "Local storage is unavailable; changes apply only until this page closes.",
+  "resetDone": "Defaults restored"
+}
