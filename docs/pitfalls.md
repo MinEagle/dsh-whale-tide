@@ -406,3 +406,19 @@ p/li/pre/table/... → 向上找到 parent 带 data-slot="conversation.chat.node
 再挂 `.dshwt-prose`；只处理 `conversation.chat.flow` 内、跳过
 `conversation.chat.turnTail`。MutationObserver 监听 body 子树 + 250ms 节流，
 流式新增的段落也能在 250ms 内被覆盖。
+
+## 29. 每段柔光片在大块鲸鱼上会变成白卡片（用户反馈，0.4.0 移除）
+
+0.3.0 按 dsh-quiet 给每条助手消息加 `.dshwt-prose::before`（白 0.70、
+22px 阴影、blur 2px）。在 dsh-quiet 的细线海面上这是柔光，但在我们的
+**整块蓝色鲸鱼**上，它变成一块块边界清晰的白卡片；相邻消息还会连成一整片
+白板，用户反馈“这大光晕看得我”。
+
+0.4.0 的处理：**删掉 `.dshwt-prose` 与 text-shadow**，把
+`conversationOpacity` 默认从 0.16 降到 0.10，让海面自身退到背景。实际界面
+验证：对话中 `layer.opacity = 0.1`、`document.querySelectorAll('.dshwt-prose').length = 0`、
+chat 容器 `textShadow = none`，正文完全干净；鲸鱼仍可见但很淡。
+
+教训：**从别的插件搬视觉机制时，要连同它的背景对比度一起评估**。dsh-quiet
+的低对比海面允许“白色柔光”，高对比 ASCII 鲸鱼不行；要么降低海面对比度，
+要么用整列/无罩层，而不是逐段白底。

@@ -8,6 +8,7 @@ import {
   LABELS,
   OPTIONS,
   RANGES,
+  migrate,
   normalize,
   resetDefaults,
   storageKey,
@@ -42,6 +43,12 @@ test("tide defaults stay as shipped", () => {
   assert.equal(DEFAULTS.conversationOpacity, 0.16);
   assert.equal(DEFAULTS.conversationDensity, 0.3);
   assert.equal(DEFAULTS.followTheme, true);
+});
+
+test("migrate lowers only the old 0.16 conversation default", () => {
+  assert.equal(migrate({ conversationOpacity: 0.16 }).conversationOpacity, 0.10);
+  assert.equal(migrate({ conversationOpacity: 0.22 }).conversationOpacity, 0.22);
+  assert.equal(migrate(null), null);
 });
 
 test("normalize fills missing values and drops unknown fields", () => {

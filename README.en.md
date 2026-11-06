@@ -37,10 +37,10 @@ the empty conversation the fish swim back in from the edges.
   `active` uses dsh-quiet's full-window ebb: opacity falls to 16% and 30% of
   the fish remain.
 - **Conversation readability** — 14 host surface tokens (bg layers, bubble,
-  borders, labels) become lightly translucent, each assistant message gets a
-  local `.dshwt-prose` halo panel (::before + 2px blur), the composer keeps a
-  0.74/0.78 frosted tint with 3px blur, popovers stay opaque and borders are
-  0.5px at DPR>=2.
+  borders, labels) become lightly translucent and the conversation background
+  opacity drops to 0.10 by default; there is **no text halo or panel** over
+  the prose. The composer keeps a 0.74/0.78 frosted tint with 3px blur,
+  popovers stay opaque and borders are 0.5px at DPR>=2.
 - **Configurable** — exactly eight settings, applied live, saved in
   `localStorage`, with a restore-defaults button.
 - **Light / dark** — following the DSH theme switches the backdrop colour,
@@ -73,11 +73,11 @@ From npm (once published):
 dsh plugin --profile <your-profile> add dsh-whale-tide
 ```
 
-From the 0.3.0 GitHub Release tarball:
+From the 0.4.0 GitHub Release tarball:
 
 ```bash
 dsh plugin --profile <your-profile> add \
-  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.3.0/dsh-whale-tide-0.3.0.tgz
+  https://github.com/MinEagle/dsh-whale-tide/releases/download/v0.4.0/dsh-whale-tide-0.4.0.tgz
 ```
 
 From a local checkout:
@@ -113,7 +113,7 @@ Four groups; changes apply live, persist in `localStorage`
 | Show background | on | on / off | Removes the layer and `body` attributes |
 | Opacity | 1.00 | 0–1 | Layer opacity in an empty conversation |
 | Creature density | 0.65 | 0–1 | Share of the school shown at high tide |
-| Opacity in conversation | 0.16 | 0–0.5 | Multiplier while active |
+| Opacity in conversation | 0.10 | 0–0.5 | Multiplier while active (0.10 since 0.4.0) |
 | Creature ratio in conversation | 0.30 | 0–1 | Share of fish kept while active |
 | Follow light / dark | on | on / off | Off pins the mode active when switched off |
 
@@ -255,7 +255,7 @@ See [docs/design.md](docs/design.md).
   the `hero` state instead of breaking.
 - The UI exposes 24 settings from upstream; internal steering and hunger
   constants stay in the engine.
-- 0.3.0 is available as a GitHub Release tarball but not yet on the npm
+- 0.4.0 is available as a GitHub Release tarball but not yet on the npm
   registry; the repository also includes a local directory install and a
   packed `dist/*.tgz`.
 

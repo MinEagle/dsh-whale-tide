@@ -1,6 +1,6 @@
 # 设计说明
 
-本文说明鲸汐（Whale Tide）0.3.0 的架构、相位模型、渲染流水线、性能取舍与验证边界。
+本文说明鲸汐（Whale Tide）0.4.0 的架构、相位模型、渲染流水线、性能取舍与验证边界。
 需求与验收见仓库根目录 README；这里记录“为什么这样做”。
 
 ## 1. 目标与非目标
@@ -294,23 +294,25 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
 背景底色、侧栏 token、正文 text-shadow、磨砂底色、画布调色板都按这两个属性
 分浅/深两套；切换时只更新属性与引擎 `setAppearance`，不重建引擎。
 
-### 4.9 对话可读性（0.3.0）
+### 4.9 对话可读性（0.4.0）
 
-对话界面按 dsh-quiet 的三层机制处理，但都不接管消息渲染：
+对话界面保留 dsh-quiet 的表面处理，但**不再使用文字光晕/柔光片**：
 
 1. **主题 token**（`theme.overrideTokens`，卸载自动还原）：`bg-base` 透明，
    `bg-layer-1` 0.84/0.88，`bg-layer-2/3` 保持不透明（弹层可读），sidebar
    0.55/0.60，气泡 0.92/0.90，label 与 border 全套。共 14 项。
-2. **正文柔光片**：`tagProse()` 在每个 `[data-slot="conversation.chat.node"]`
-   的直接子 wrapper 上挂 `.dshwt-prose`；CSS 用 `::before`（inset -7/-12、
-   圆角 14、白 0.70 / 深 0.72、blur 2px）做局部柔光。按结构找节点，不依赖
-   哈希类名；MutationObserver + 250ms 节流跟随流式输出。
+2. **无正文罩层**：不挂 `.dshwt-prose`，不加 `text-shadow`。对话中的
+   `conversationOpacity` 默认从 0.16 降到 **0.10**，让海面自己退到背景；
+   `tools/preview.html` 里对应的模拟文字也去掉了 `::before` 光晕。
 3. **输入框与弹层**：对话中 `[data-composer-card]` 0.74/0.78 + blur 3px，
    `[data-trigger-menu]` 强制不透明，DPR≥2 边框 0.5px。
 
-与 0.2.x 的区别：0.2.x 只把 `bg-base` 透明 + 给整个 chat 容器加
-`text-shadow`，导致气泡、卡片、输入框仍是不透明白块，文字阴影对大块蓝色
-鲸鱼也几乎无效。
+为什么删掉 0.3.0 的正文柔光片：dsh-quiet 的 `.dshr_text::before` 在其细线
+灰度海面上是柔光；我们的鲸鱼是**整块高对比蓝色块**，同样的 70% 白底 + 22px
+阴影会变成一块块明显的白卡片，两段之间还会连成大白板。对照图见
+`docs/design-options/`。0.4.0 改用“更深退潮”，正文区域完全干净。
+迁移：旧设置里的 `conversationOpacity === 0.16`（旧默认）会一次性改为 0.10；
+用户自定义的其他值保留。
 
 ## 5. 性能取舍
 
@@ -355,12 +357,12 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
     全部消失，侧栏 token 回到 `#f9fafb`、`--dsw-alias-bg-base` 回到 `#fff`；
   - 字符风格：切到汉字后 canvas 字体为 serif 栈、层属性 `data-glyph="hanzi"`、
     格子重排为 11856 格；恢复默认回到 ASCII；
-  - 对话可读性（0.3.0）：`--dsw-alias-bg-layer-1` 在浅色为
+  - 对话可读性（0.4.0）：`--dsw-alias-bg-layer-1` 在浅色为
     `rgba(255,255,255,0.84)`、深色 `rgba(23,24,28,0.88)`；气泡
     `rgba(237,243,254,0.92)`；composer `rgba(255,255,255,0.74)` +
-    `blur(3px)`（深色 0.78）；`.dshwt-prose` 数量与助手消息块一致，
-    `::before` 为白 0.70 + `blur(2px)`；关闭插件后 token 回到原生
-    `#232324`（深色）/ `#2c2c2e`，`.dshwt-prose` 归零；
+    `blur(3px)`（深色 0.78）；对话中 layer opacity 为 0.10，无 `.dshwt-prose`
+    节点、无 text-shadow；关闭插件后 token 回到原生 `#232324`（深色）/
+    `#2c2c2e`；
   - 减少动效：CDP 模拟 `prefers-reduced-motion: reduce` 后，两次间隔 1.5 s 的
     `canvas.toDataURL()` 完全一致（静态帧）；
   - 设置里的“显示背景”开关：关闭后 `body` 属性消失、层隐藏、界面恢复原生；
