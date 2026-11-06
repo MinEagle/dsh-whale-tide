@@ -6,8 +6,10 @@ let swimSpeed=Number(settings.speed)||1;
 let fishCount=Math.round(Number(settings.fishCount))||100;
 let fishGlint=Number(settings.fishGlint);if(!Number.isFinite(fishGlint))fishGlint=1;
 let fishColor=String(settings.fishColor||"#a9bde8");
+let whaleColor=String(settings.whaleColor||"#c3c8d2");
 let sidebarFish=Math.round(Number(settings.sidebarFish))||0;
 let whaleCount=Math.round(Number(settings.whaleCount))||3;
+let cellSize=Math.round(Number(settings.cellSize))||9;
 const reduced=opts.reducedMotion!=null?!!opts.reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches;
 const cv=canvas,ctx=cv.getContext('2d');
 const COLH=opts.columnHalf!=null?opts.columnHalf:384;  // half width of the readable chat column (px)
@@ -36,6 +38,7 @@ const G_BLANK=0,G_DOT=1,G_PER=2,G_DASH=3,G_TILDE=4,G_COLON=5,G_EQ=7,G_O=10,G_DEG
 // ascii-sharks ramps: sparse glyphs on lit skin, dense glyphs in shadow
 const SKIN=[5,6,14,15,16,17,18,19,20],FINS=[15,6,14,16,5],RIDGE=[20,18,15],EDGE_H=[5,6],EDGE_L=[2,12,13,21];
 const atlas=document.createElement('canvas'),actx=atlas.getContext('2d');let atlasInk=-1;
+const whaleAtlas=document.createElement('canvas'),whaleActx=whaleAtlas.getContext('2d');let whaleAtlasKey='';
 const FONT='ui-monospace,"SFMono-Regular","DejaVu Sans Mono",Menlo,Consolas,monospace';
 
 let W=0,H=0,dpr=1,cw=10,ch=15,cols=0,rows=0,N=0,sw=1,sh=1;
@@ -63,6 +66,15 @@ function buildAtlas(){
   actx.textAlign='center';actx.textBaseline='middle';
   for(let g=1;g<GL.length;g++)actx.fillText(GL[g],g*sw+sw/2,sh/2+dpr);
   atlasInk=P.ink;}
+function buildWhaleAtlas(){
+  const key=whaleColor+'|'+sw+'|'+sh+'|'+dpr;
+  if(key===whaleAtlasKey)return;
+  whaleAtlas.width=sw*GL.length;whaleAtlas.height=sh;
+  whaleActx.clearRect(0,0,whaleAtlas.width,whaleAtlas.height);
+  whaleActx.fillStyle=whaleColor;whaleActx.font=`500 ${Math.round(ch*.74*dpr)}px ${FONT}`;
+  whaleActx.textAlign='center';whaleActx.textBaseline='middle';
+  for(let g=1;g<GL.length;g++)whaleActx.fillText(GL[g],g*sw+sw/2,sh/2+dpr);
+  whaleAtlasKey=key;}
 
 /* ---- whales: articulated creatures (same construction as an ascii-sharks shark, whale-shaped) ----
    sim spine: NN nodes, the head steers and every node follows at a fixed distance with a per-joint bend
@@ -238,7 +250,7 @@ function resize(){
   const first=W===0,ow=W,oh=H;
   dpr=Math.min(1.5,devicePixelRatio||1);W=Math.max(1,cv.clientWidth);H=Math.max(1,cv.clientHeight);
   cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
-  cw=clamp(Math.round(W/124),8,13);ch=Math.round(cw*1.45);cols=Math.ceil(W/cw);rows=Math.ceil(H/ch);N=cols*rows;
+  cw=Math.max(6,Math.min(12,Math.round(cellSize)));ch=Math.round(cw*1.45);cols=Math.ceil(W/cw);rows=Math.ceil(H/ch);N=cols*rows;
   noise=new Float32Array(N);twP=new Float32Array(N);twF=new Float32Array(N);energy=new Float32Array(N);energyT=new Float32Array(N);
   colMask=new Float32Array(N);wMask=new Float32Array(N);cellA=new Float32Array(N);cellG=new Uint8Array(N);surfaceA=new Float32Array(N);surfaceG=new Uint8Array(N);bOf=new Uint8Array(N);order=new Int32Array(N);
   fishStamp=new Uint32Array(N);wFlag=new Uint8Array(N);wShade=new Float32Array(N);wKey=new Uint32Array(N);wA=new Float32Array(N);blockA=new Float32Array(N);
@@ -386,6 +398,7 @@ const SPEC=[
   {name:'mackerel',cruise:32,max:60,min:16,weight:2,schoolSize:[5,9],spacing:[2.6,1.3],align:2,coh:.9,jitter:25,mill:0,vdrag:2},
   {name:'goby',cruise:26,max:56,min:10,weight:1,schoolSize:[8,12],spacing:[1.4,1.1],align:.35,coh:1.4,jitter:110,mill:0,vdrag:.3},
 ];
+const FISH_GLYPHS=['-','=','.','~','*'];
 const TOTAL_WEIGHT=SPEC.reduce((n,s)=>n+s.weight,0);
 function pickSpecies(){let r=Math.random()*TOTAL_WEIGHT;for(let i=0;i<SPEC.length;i++){r-=SPEC[i].weight;if(r<=0)return i;}return 0;}
 let sepX=[],sepY=[],perc=60;
@@ -873,12 +886,22 @@ function render(){
     for(const i of L){const c=i%cols,r=(i/cols)|0,x=Math.round(c*cx),y=Math.round(r*cy);ctx.fillRect(x+ins,y+ins,Math.round((c+1)*cx)-x-ins,Math.round((r+1)*cy)-y-ins);}}
   // counting sort glyph cells into alpha buckets, one globalAlpha per bucket
   counts.fill(0);const SKIP=NB;
-  for(let i=0;i<N;i++){if(cellG[i]===G_BLANK||inBand(i)){bOf[i]=SKIP;continue;}const a=cellA[i]*(wFlag[i]?wMask[i]:colMask[i]);const b=clamp(Math.round(a/AMAX*NB),0,NB-1);
+  const whaleColored=!!whaleColor;
+  for(let i=0;i<N;i++){if(cellG[i]===G_BLANK||inBand(i)||(whaleColored&&wFlag[i])){bOf[i]=SKIP;continue;}const a=cellA[i]*(wFlag[i]?wMask[i]:colMask[i]);const b=clamp(Math.round(a/AMAX*NB),0,NB-1);
     if(b===0){bOf[i]=SKIP;continue;}bOf[i]=b;counts[b]++;}
   starts[0]=0;for(let b=1;b<=NB;b++)starts[b]=starts[b-1]+counts[b-1];const cur=starts.slice();
   for(let i=0;i<N;i++){const b=bOf[i];if(b!==SKIP)order[cur[b]++]=i;}
   for(let b=1;b<NB;b++){const n=counts[b];if(!n)continue;ctx.globalAlpha=b/NB*AMAX;const st=starts[b];
     for(let k=st;k<st+n;k++){const i=order[k],c=i%cols,r=(i/cols)|0;ctx.drawImage(atlas,cellG[i]*sw,0,sw,sh,Math.round(c*cx),Math.round(r*cy),sw,sh);}}
+  // coloured whale pass: independent atlas, still drawImage per cell
+  if(whaleColored){
+    buildWhaleAtlas();
+    for(let i=0;i<N;i++){if(!wFlag[i]||cellG[i]===G_BLANK||inBand(i))continue;
+      const a=cellA[i]*(wMask[i]||1);if(a<.008)continue;
+      ctx.globalAlpha=Math.min(1,a);
+      ctx.drawImage(whaleAtlas,cellG[i]*sw,0,sw,sh,Math.round((i%cols)*cx),Math.round(((i/cols)|0)*cy),sw,sh);}
+    ctx.globalAlpha=1;
+  }
   // coloured fish pass: 100 fish × fillText is cheap compared with the cell field
   if(fishColored){
     ctx.font=`400 ${Math.round(ch*.74)}px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=fishColor;
@@ -887,7 +910,7 @@ function render(){
       const glint=Math.min(1,Math.abs(f.turn||0)/3.5);
       const a=Math.min(.95,.28+.55*depthA+.22*glint*fishGlint+.15*f.alarm)*edgeFade(f.exitMode,f.x,f.y,55);
       if(a<.02)continue;ctx.globalAlpha=a;
-      ctx.fillText((f.depth||.8)<.68?'.':'-',(i%cols)*cw+cw/2,((i/cols)|0)*ch+ch/2+1,Math.max(1,cw-1));}
+      ctx.fillText(FISH_GLYPHS[f.sp]||'-',(i%cols)*cw+cw/2,((i/cols)|0)*ch+ch/2+1,Math.max(1,cw-1));}
     ctx.globalAlpha=1;
   }
   // bubbles / spout glyphs (free-floating), same grey
@@ -917,12 +940,16 @@ const api={
     const fg=Math.max(0,Math.min(2,Number(settings.fishGlint)||0));
     const sf=Math.max(0,Math.min(12,Math.round(Number(settings.sidebarFish)||0)));
     const wc=Math.max(1,Math.min(3,Math.round(Number(settings.whaleCount)||3)));
+    const cs=Math.max(6,Math.min(12,Math.round(Number(settings.cellSize)||9)));
     swimSpeed=clamp(Number(settings.speed)||1,.2,2);
     fishGlint=fg;
     fishColor=String(settings.fishColor||"#a9bde8");
+    whaleColor=String(settings.whaleColor||"#c3c8d2");
+    whaleAtlasKey='';
     if(fc!==fishCount){fishCount=fc;seedFish();}
     if(sf!==sidebarFish){sidebarFish=sf;}
     if(wc!==whaleCount){whaleCount=wc;applyWhaleVisibility();}
+    if(cs!==cellSize){cellSize=cs;resize();}
     draw();},
   /** 'light' | 'dark' — ink crossfades over 400 ms (instant under reduced motion) */
   setTheme(th){goalTheme=th==='dark'?'dark':'light';if(reduced){dk=goalTheme==='dark'?1:0;draw();}},

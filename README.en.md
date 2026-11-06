@@ -17,7 +17,7 @@ streaming replies, plus a settings panel.
   most one resident whale behind the sidebar glass.
 - **Blur-to-clear streaming** — replies reveal character by character; native
   rendering is used under reduced motion.
-- **Settings** — thirteen live controls at Settings → Whale Tide, persisted in
+- **Settings** — fourteen live controls at Settings → Whale Tide, persisted in
   `localStorage`.
 - **Theme aware** — follows the Harness light/dark scheme.
 
@@ -35,6 +35,7 @@ streaming replies, plus a settings panel.
 | Motion | Whale color | `#c3c8d2` | any colour |
 | Motion | Whale count | 3 | 1–3 |
 | Motion | Sidebar fish | 6 | 0–12 |
+| Interface | Cell size | 9 px | 6–12 |
 | Interface | Sidebar blur | 6 px | 0–20 |
 | Interface | Frosted composer | on | on / off |
 | Interface | Stream blur | 10 px | 0–20 |
