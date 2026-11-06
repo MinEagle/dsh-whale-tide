@@ -355,6 +355,12 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
     全部消失，侧栏 token 回到 `#f9fafb`、`--dsw-alias-bg-base` 回到 `#fff`；
   - 字符风格：切到汉字后 canvas 字体为 serif 栈、层属性 `data-glyph="hanzi"`、
     格子重排为 11856 格；恢复默认回到 ASCII；
+  - 对话可读性（0.3.0）：`--dsw-alias-bg-layer-1` 在浅色为
+    `rgba(255,255,255,0.84)`、深色 `rgba(23,24,28,0.88)`；气泡
+    `rgba(237,243,254,0.92)`；composer `rgba(255,255,255,0.74)` +
+    `blur(3px)`（深色 0.78）；`.dshwt-prose` 数量与助手消息块一致，
+    `::before` 为白 0.70 + `blur(2px)`；关闭插件后 token 回到原生
+    `#232324`（深色）/ `#2c2c2e`，`.dshwt-prose` 归零；
   - 减少动效：CDP 模拟 `prefers-reduced-motion: reduce` 后，两次间隔 1.5 s 的
     `canvas.toDataURL()` 完全一致（静态帧）；
   - 设置里的“显示背景”开关：关闭后 `body` 属性消失、层隐藏、界面恢复原生；
