@@ -249,8 +249,8 @@ See [docs/design.md](docs/design.md).
 - The conversation DOM is not a public API. Only `data-content-phase` and
   `data-conversation-*` are used; if DSH changes them, the plugin degrades to
   the `hero` state instead of breaking.
-- The UI exposes exactly eight settings by design; deeper knobs (glyph set,
-  wake strength, whale count) stay in the engine.
+- The UI exposes 24 settings from upstream; internal steering and hunger
+  constants stay in the engine.
 - 0.2.0 is available as a GitHub Release tarball but not yet on the npm
   registry; the repository also includes a local directory install and a
   packed `dist/*.tgz`.

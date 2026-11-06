@@ -322,10 +322,17 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
     侧栏 `rgba(255,255,255,.55)` + `blur(10px)`、输入框 `::before` 磨砂；
   - 打开已有会话后：chat 节点 `data-content-phase="active"`、body 相位同步为
     `active`、层不透明度 0.16、输入框磨砂消失、正文 `text-shadow` 生效；
-  - 设置页：从账号菜单进入“设置 → 鲸汐”，8 项控件全部渲染（2 个开关、
-    5 个 range、1 个取色器、恢复默认）；修改 density 0.25 / opacity 0.5 后
-    `localStorage` 立即写入，刷新后仍为 0.5（active 会话中显示 0.08 =
-    0.5 × 0.16）；恢复默认后回到 0.65 / 1 / 0.16；
+  - 设置页：从账号菜单进入“设置 → 鲸汐”，**24 项控件**全部渲染（4 个开关、
+    16 个 range、3 个下拉、1 个取色器、恢复默认），按四组分区；
+  - 修改 `count=5 / species=orca / speed=1.4 / fishCount=240 / gridScale=1.4`
+    后 `localStorage` 立即写入上述值，画布重建为 5 头虎鲸、240 条鱼、更大的字符格，
+    游动继续；“恢复默认”回到上游默认值；
+  - 深色：在「设置 → 通用设置 → 外观 → 深色」切换后
+    `body[data-dsh-whale-tide-scheme=dark]`、body 背景 `rgb(21,21,23)`、
+    层背景 `rgb(21,21,23)`、侧栏 token `rgba(21,21,23,.62)`、
+    磨砂 `rgba(24,24,26,.45)`、画布深色调色板全部生效；切回浅色恢复；
+  - 卸载：关闭插件后 layer / canvas / style / `--dshwt-*` 变量 / body 属性
+    全部消失，侧栏 token 回到 `#f9fafb`、`--dsw-alias-bg-base` 回到 `#fff`；
   - 设置里的“显示背景”开关：关闭后 `body` 属性消失、层隐藏、界面恢复原生；
     再开启后层与属性恢复；
   - 关闭插件：layer / canvas / style / body 属性全部消失，body 与侧栏恢复原生底色；
