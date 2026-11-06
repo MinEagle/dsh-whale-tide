@@ -288,8 +288,10 @@ null；代码同时兼容“同节点”与“嵌套”两种形式。
     再开启后层与属性恢复；
   - 关闭插件：layer / canvas / style / body 属性全部消失，body 与侧栏恢复原生底色；
     再启用后 layer、canvas、设置页注册恢复。
-- 0.1.0 未发布到 npm：本机 npm 未登录；GitHub 直连被网络策略阻断。
-  `npm pack` 产物可作为 GitHub Release 附件或本地安装源。
+- 0.1.0 已推送 GitHub（`MinEagle/dsh-whale-tide`）并创建 `v0.1.0` Release，
+  附件为 `dsh-whale-tide-0.1.0.tgz`；npm registry 发布**未执行**：本机 npm 未登录
+  （`npm whoami` 返回 ENEEDAUTH）。配置 npm token 后执行 `npm publish --access public`
+  即可补上。
 
 
 ## 7. 后续可做
