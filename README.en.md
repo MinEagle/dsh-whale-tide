@@ -21,6 +21,22 @@ streaming replies, plus a settings panel.
   `localStorage`.
 - **Theme aware** — follows the Harness light/dark scheme.
 
+## Screenshots
+
+| Empty session (light) | Empty session (dark) |
+| --- | --- |
+| ![Hero light](docs/media/preview-hero-light.png) | ![Hero dark](docs/media/preview-hero-dark.png) |
+
+| Conversation (light) | Conversation (dark) |
+| --- | --- |
+| ![Chat light](docs/media/preview-chat-light.png) | ![Chat dark](docs/media/preview-chat-dark.png) |
+
+| Settings (light) | Settings (dark) |
+| --- | --- |
+| ![Settings light](docs/media/settings-light.png) | ![Settings dark](docs/media/settings-dark.png) |
+
+> Captured from `tools/preview/index.html` and the real Harness settings panel.
+
 ## Settings
 
 | Group | Setting | Default | Range |

@@ -14,6 +14,22 @@
 - **设置面板**：在「设置 → 鲸汐」中调整 14 项参数，实时生效并持久化到 `localStorage`。
 - **主题适配**：跟随 Harness 的深/浅色；侧栏、输入框和正文柔光随主题切换。
 
+## 界面
+
+| 空会话（浅色） | 空会话（深色） |
+| --- | --- |
+| ![空会话浅色](docs/media/preview-hero-light.png) | ![空会话深色](docs/media/preview-hero-dark.png) |
+
+| 对话中（浅色） | 对话中（深色） |
+| --- | --- |
+| ![对话浅色](docs/media/preview-chat-light.png) | ![对话深色](docs/media/preview-chat-dark.png) |
+
+| 设置页（浅色） | 设置页（深色） |
+| --- | --- |
+| ![设置浅色](docs/media/settings-light.png) | ![设置深色](docs/media/settings-dark.png) |
+
+> 截图来自 `tools/preview/index.html`（可离线复现）与真实 Harness 设置面板。
+
 ## 设置
 
 | 分组 | 设置 | 默认 | 范围 |
