@@ -45,7 +45,7 @@ streaming replies, plus a settings panel.
 | Backdrop | Opacity | 1.00 | 0–1 |
 | Backdrop | Opacity in conversation | 1.00 | 0–1 |
 | Motion | Swimming speed | 1.0× | 0.2–2 |
-| Motion | Fish count | 100 | 20–200 |
+| Motion | Fish count | 60 | 20–200 |
 | Motion | Fish glint | 1.0 | 0–2 |
 | Motion | Accent color | `#a9bde8` | any colour (whales + fish) |
 | Motion | Whale count | 3 | 1–3 |
