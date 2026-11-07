@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { BOOLEAN_KEYS, DEFAULTS, GROUPS, HINTS, LABELS, RANGES, SCENES, normalize, resetDefaults, storageKey } from "../lib/settings.js";
+import { BOOLEAN_KEYS, DEFAULTS, GROUPS, HINTS, LABELS, RANGES, normalize, resetDefaults, storageKey } from "../lib/settings.js";
 
 test("storage key", () => assert.equal(storageKey, "dsh-whale-tide:v1"));
 test("defaults cover grouped controls", () => {
@@ -15,8 +15,6 @@ test("defaults match the dsh-quiet template", () => {
   assert.equal(DEFAULTS.speed, 1);
   assert.equal(DEFAULTS.fishCount, 100);
   assert.equal(DEFAULTS.accentColor, "#a9bde8");
-  assert.equal(DEFAULTS.scene, "ocean");
-  assert.equal(DEFAULTS.sceneDensity, 1);
   assert.equal(DEFAULTS.fishGlint, 1);
   assert.equal(DEFAULTS.whaleCount, 3);
   assert.equal(DEFAULTS.sidebarFish, 6);
@@ -37,13 +35,6 @@ test("normalize clamps and fills", () => {
   assert.equal(n.opacity, 1);
   assert.equal(n.composerGlass, true);
 });
-test("normalize accepts only known scenes", () => {
-  assert.equal(normalize({ scene: "snow" }).scene, "snow");
-  assert.equal(normalize({ scene: "birds" }).scene, "birds");
-  assert.equal(normalize({ scene: "lava" }).scene, "ocean");
-  assert.deepEqual([...SCENES], ["ocean", "snow", "birds"]);
-});
-
 test("normalize rejects malformed input", () => {
   const n = normalize({ speed: "x", enabled: "yes", whaleCount: null });
   assert.equal(n.speed, 1);
@@ -58,6 +49,6 @@ test("every control has label and hint", () => {
   for (const key of Object.keys(DEFAULTS)) { assert.equal(typeof LABELS[key], "string", key); assert.equal(typeof HINTS[key], "string", key); }
 });
 test("booleans and ranges cover grouped controls", () => {
-  const handled = new Set([...Object.keys(RANGES), ...BOOLEAN_KEYS, "accentColor", "scene"]);
+  const handled = new Set([...Object.keys(RANGES), ...BOOLEAN_KEYS, "accentColor"]);
   for (const key of GROUPS.flatMap((g) => g.keys)) assert.equal(handled.has(key), true, key);
 });

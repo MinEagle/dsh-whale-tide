@@ -11,13 +11,6 @@ let whaleColor=accentColor;
 let sidebarFish=Math.round(Number(settings.sidebarFish))||0;
 let whaleCount=Math.round(Number(settings.whaleCount))||3;
 let cellSize=Math.round(Number(settings.cellSize))||9;
-const SCENES=['ocean','snow','birds'];
-let scene=SCENES.includes(settings.scene)?settings.scene:'ocean';
-let sceneDensity=Math.max(.2,Math.min(2,Number(settings.sceneDensity)||1));
-const snow=[];
-const birdGangs=[];
-const sceneBg=document.createElement('canvas');
-let sceneBgKey='';
 const reduced=opts.reducedMotion!=null?!!opts.reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches;
 const cv=canvas,ctx=cv.getContext('2d');
 const COLH=opts.columnHalf!=null?opts.columnHalf:384;  // half width of the readable chat column (px)
@@ -41,9 +34,8 @@ let P={};function palette(){const L=TH.light,D=TH.dark;P={ink:Math.round(mix(L.i
 palette();
 
 // glyph atlas (pre-rendered, drawn with drawImage + globalAlpha per bucket)
-const GL=[' ','·','.','-','~',':',';','=','+','*','o','°',"'",',','t','%','S','X','8','#','@','`','^','/','\\','v'];
+const GL=[' ','·','.','-','~',':',';','=','+','*','o','°',"'",',','t','%','S','X','8','#','@','`'];
 const G_BLANK=0,G_DOT=1,G_PER=2,G_DASH=3,G_TILDE=4,G_COLON=5,G_EQ=7,G_O=10,G_DEG=11,G_TICK=12;
-const G_BIRD_UP=22,G_BIRD_WING=23,G_BIRD_BACK=24,G_BIRD_DOWN=25;
 // ascii-sharks ramps: sparse glyphs on lit skin, dense glyphs in shadow
 const SKIN=[5,6,14,15,16,17,18,19,20],FINS=[15,6,14,16,5],RIDGE=[20,18,15],EDGE_H=[5,6],EDGE_L=[2,12,13,21];
 const atlas=document.createElement('canvas'),actx=atlas.getContext('2d');let atlasInk=-1;
@@ -270,8 +262,6 @@ function resize(){
     colMask[i]=.55+.45*s;               // ocean / fish fade to ~55% under the chat column
     wMask[i]=.5+.5*s;}
   buildAtlas();whaleSize();ray.span=base*.2;
-  sceneBgKey='';
-  if(scene==='snow')seedSnow();else if(scene==='birds')seedBirds();
   if(first){startPod();seedFish();applyWhaleVisibility();return;}
   const sx=(ow?W/ow:1),sy=(oh?H/oh:1);
   for(const f of fish){f.x*=sx;f.y*=sy;}
@@ -796,126 +786,8 @@ function spout(w,k){k=k||1;const b=blowhole(w),n=Math.round(5+12*k);
 
 let fAcc=0;
 let seaCalm=1;
-
-/* ===================== scenes: snow / birds ===================== */
-function buildSceneBg(){
-  const key=W+'x'+H+'|'+cw+'|'+ch+'|'+P.ink+'|'+dpr;
-  if(key===sceneBgKey)return;
-  sceneBgKey=key;
-  sceneBg.width=Math.max(1,Math.round(W*dpr));sceneBg.height=Math.max(1,Math.round(H*dpr));
-  const g=sceneBg.getContext('2d');
-  g.setTransform(dpr,0,0,dpr,0,0);
-  g.clearRect(0,0,W,H);
-  g.fillStyle=`rgb(${P.ink},${P.ink},${P.ink})`;
-  g.font=`500 ${Math.round(ch*.5)}px ${FONT}`;g.textAlign='center';g.textBaseline='middle';
-  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
-    if((c+r)%2)continue;
-    g.globalAlpha=.05+.05*((c*13+r*7)%5)/4;
-    g.fillText('.',c*cw+cw/2,r*ch+ch/2);
-  }
-  g.globalAlpha=1;
-}
-
-function seedSnow(){
-  snow.length=0;
-  const n=Math.round((W*H)/4500*sceneDensity);
-  for(let i=0;i<n;i++)snow.push(newFlake(true));
-}
-function newFlake(anywhere){
-  const z=rand(.35,1);
-  return {x:rand(-20,W+20),y:anywhere?rand(-H*.1,H):rand(-H*.15,-10),z,
-    vy:(16+46*z)*rand(.7,1.2),ph:rand(0,TAU),sw:rand(.5,1.6),g:Math.random()<.5?G_DOT:Math.random()<.5?G_PER:G_DEG};
-}
-function stepSnow(dt){
-  for(let i=0;i<snow.length;i++){const f=snow[i];
-    f.ph+=dt*f.sw;
-    f.y+=f.vy*dt;
-    f.x+=Math.sin(f.ph)*9*dt+6*dt;
-    if(f.y>H+12||f.x>W+30||f.x<-30){snow[i]=newFlake(false);snow[i].x=rand(-10,W+10);}
-  }
-}
-
-function newGang(fromEdge){
-  const dir=Math.random()<.5?1:-1;
-  const size=Math.round((3+Math.floor(Math.random()*3))*Math.max(.4,sceneDensity));
-  const members=[];
-  for(let i=0;i<size;i++){
-    const side=i%2===0?1:-1,rank=Math.ceil(i/2);
-    members.push({ox:-rank*55,oy:side*rank*20,ph:rand(0,TAU),sp:rand(.9,1.1)});
-  }
-  return {x:fromEdge?(dir>0?-60:W+60):rand(0,W),y:rand(H*.08,H*.5),dir,
-    speed:(40+rand(0,24))*Math.max(.4,sceneDensity),members,alive:true};
-}
-function seedBirds(){
-  birdGangs.length=0;
-  const n=Math.max(1,Math.min(3,Math.round(1.5*sceneDensity)));
-  for(let i=0;i<n;i++)birdGangs.push(newGang(false));
-}
-function stepBirds(dt){
-  for(const g of birdGangs){
-    if(!g.alive)continue;
-    g.x+=g.dir*g.speed*dt;
-    g.y+=Math.sin(T*.35+g.x*.004)*10*dt;
-    if(g.x<-120||g.x>W+120){g.alive=false;}
-    for(const m of g.members)m.ph+=dt*(5.5*m.sp);
-  }
-  if(birdGangs.length&&birdGangs.every(g=>!g.alive)){
-    birdGangs.length=0;
-    birdGangs.push(newGang(true));
-    if(sceneDensity>=1.6)birdGangs.push(newGang(true));
-  }
-}
-
-function stepScene(dt){
-  if(scene==='snow')stepSnow(dt);
-  else if(scene==='birds')stepBirds(dt);
-  for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.age+=dt;if(p.age>p.life){parts.splice(i,1);continue;}}
-  for(let i=ripples.length-1;i>=0;i--){ripples[i].age+=dt;if(ripples[i].age>ripples[i].life)ripples.splice(i,1);}
-}
-
-function renderScene(){
-  if(P.ink!==atlasInk)buildAtlas();
-  buildSceneBg();
-  ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;
-  ctx.clearRect(0,0,cv.width,cv.height);
-  ctx.drawImage(sceneBg,0,0);
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.fillStyle=fishColor;ctx.textAlign='center';ctx.textBaseline='middle';
-  if(scene==='snow'){
-    for(const f of snow){
-      const a=.34+.56*f.z;
-      ctx.globalAlpha=Math.min(.9,a*(conversationMode?.55:1));
-      ctx.font=`400 ${Math.round(ch*(.5+.5*f.z))}px ${FONT}`;
-      ctx.fillText(GL[f.g],f.x,f.y);
-    }
-  }else if(scene==='birds'){
-    ctx.globalAlpha=conversationMode?.58:.92;
-    for(const g of birdGangs){
-      for(const m of g.members){
-        const flap=Math.sin(m.ph);
-        // three cells per bird: left wing, body, right wing
-        const up=flap>.48, down=flap<-.25;
-        const wingL=G_BIRD_BACK; // always \, the wing shape must stay readable
-        const wingR=G_BIRD_WING; // always /
-        const bx=g.x+m.ox, by=g.y+m.oy;
-        const lift=up?-ch*.28:down?ch*.2:0;
-        const span=cw*1.55;
-        ctx.font=`400 ${Math.round(ch*1.5)}px ${FONT}`;
-        // one broad wing pair + a body, so each silhouette stays readable
-        ctx.fillText(GL[wingL],bx-span,by+lift);
-        ctx.fillText(GL[wingR],bx+span,by+lift);
-        ctx.font=`400 ${Math.round(ch*.72)}px ${FONT}`;
-        ctx.fillText(GL[G_BIRD_DOWN],bx,by+lift+ch*.55);
-      }
-    }
-  }
-  ctx.globalAlpha=1;
-  ctx.setTransform(1,0,0,1,0,0);
-}
-
 function simulate(dt){T+=dt;
   seaCalm+=( (conversationMode?.62:1) - seaCalm )*Math.min(1,dt*.45);
-  if(scene!=='ocean'){stepScene(dt);return;}
   fAcc+=dt;let st=0;while(fAcc>=1/60&&st<6){stepFish(1/60);fAcc-=1/60;st++;}if(st===6)fAcc=0;
   stepSchools(dt);
   for(const w of stepOrder)stepWhale(w,dt);
@@ -1003,7 +875,6 @@ function shadeCreatures(){const tq=reduced?0:T;
     cellG[i]=g;cellA[i]=a;blockA[i]=A*(.16+.17*tone);}}
 
 function render(){
-  if(scene!=='ocean'){renderScene();return;}
   if(P.ink!==atlasInk)buildAtlas();
   const bandTop=chatTop(),bandLeft=splitX(),inBand=i=>{const c=i%cols,r=(i/cols)|0;return c*cw+cw*.5>=bandLeft&&r*ch+ch*.5<bandTop;};
   field();
@@ -1103,11 +974,6 @@ const api={
     if(fc!==fishCount){fishCount=fc;seedFish();}
     if(sf!==sidebarFish){sidebarFish=sf;}
     if(wc!==whaleCount){whaleCount=wc;applyWhaleVisibility();}
-    const sc=SCENES.includes(settings.scene)?settings.scene:'ocean';
-    const sd=Math.max(.2,Math.min(2,Number(settings.sceneDensity)||1));
-    const sceneChanged=sc!==scene||sd!==sceneDensity;
-    if(sceneChanged){scene=sc;sceneDensity=sd;sceneBgKey='';
-      if(scene==='snow')seedSnow();else if(scene==='birds')seedBirds();}
     if(cs!==cellSize){cellSize=cs;resize();}
     draw();},
   /** 'light' | 'dark' — ink crossfades over 400 ms (instant under reduced motion) */
