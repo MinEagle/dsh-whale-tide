@@ -83,6 +83,7 @@
   }
   mount();
   window.ocean = ocean;
+  window.__dshwtScene = (name) => { ocean.setSettings({ scene: name }); };
   const params = new URLSearchParams(location.search);
 
   const place = (kind, x, y) => {

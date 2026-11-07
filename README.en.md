@@ -10,6 +10,7 @@ streaming replies, plus a settings panel.
 
 ## Features
 
+- **Three scenes (mutually exclusive)** — ocean (default), falling snow and a flock of birds; switch in Settings, all sharing the same 30fps glyph renderer.
 - **Quiet ocean** — low-contrast ASCII sea with procedurally built whales.
 - **Rich fish schools (from dsh-ascii-whales)** — five species (sardine, anchovy, silverside, mackerel, goby), about 100 fish by default, with depth, turn/alarm glints, schooling and whale predation/respawn.
 - **Conversation ebb** — creatures roam the sidebar and chat while empty;
@@ -17,7 +18,7 @@ streaming replies, plus a settings panel.
   most one resident whale behind the sidebar glass.
 - **Blur-to-clear streaming** — replies reveal character by character; native
   rendering is used under reduced motion.
-- **Settings** — thirteen live controls at Settings → Whale Tide, persisted in
+- **Settings** — fifteen live controls at Settings → Whale Tide, persisted in
   `localStorage`.
 - **Theme aware** — follows the Harness light/dark scheme.
 
@@ -31,6 +32,10 @@ streaming replies, plus a settings panel.
 | --- | --- |
 | ![Chat light](docs/media/preview-chat-light.png) | ![Chat dark](docs/media/preview-chat-dark.png) |
 
+| Snow | Birds |
+| --- | --- |
+| ![Snow](docs/media/scene-snow.png) | ![Birds](docs/media/scene-birds.png) |
+
 | Settings (light) | Settings (dark) |
 | --- | --- |
 | ![Settings light](docs/media/settings-light.png) | ![Settings dark](docs/media/settings-dark.png) |
@@ -42,6 +47,8 @@ streaming replies, plus a settings panel.
 | Group | Setting | Default | Range |
 | --- | --- | --- | --- |
 | Backdrop | Show background | on | on / off |
+| Backdrop | Scene | Ocean | Ocean / Snow / Birds |
+| Backdrop | Scene density | 1.0× | 0.2–2 |
 | Backdrop | Opacity | 1.00 | 0–1 |
 | Backdrop | Opacity in conversation | 1.00 | 0–1 |
 | Motion | Swimming speed | 1.0× | 0.2–2 |

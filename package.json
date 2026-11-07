@@ -1,6 +1,6 @@
 {
   "name": "dsh-whale-tide",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Quiet dot-matrix backdrop with swimming whales and blur-to-clear streaming text, plus settings.",
   "type": "module",
   "main": "lib/index.js",
