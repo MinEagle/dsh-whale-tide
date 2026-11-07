@@ -837,18 +837,18 @@ function stepSnow(dt){
 
 function newGang(fromEdge){
   const dir=Math.random()<.5?1:-1;
-  const size=Math.round((5+Math.floor(Math.random()*4))*Math.max(.4,sceneDensity));
+  const size=Math.round((3+Math.floor(Math.random()*3))*Math.max(.4,sceneDensity));
   const members=[];
   for(let i=0;i<size;i++){
     const side=i%2===0?1:-1,rank=Math.ceil(i/2);
-    members.push({ox:-rank*13,oy:side*rank*8,ph:rand(0,TAU),sp:rand(.9,1.1)});
+    members.push({ox:-rank*55,oy:side*rank*20,ph:rand(0,TAU),sp:rand(.9,1.1)});
   }
   return {x:fromEdge?(dir>0?-60:W+60):rand(0,W),y:rand(H*.08,H*.5),dir,
     speed:(40+rand(0,24))*Math.max(.4,sceneDensity),members,alive:true};
 }
 function seedBirds(){
   birdGangs.length=0;
-  const n=Math.max(1,Math.min(4,Math.round(3*sceneDensity)));
+  const n=Math.max(1,Math.min(3,Math.round(1.5*sceneDensity)));
   for(let i=0;i<n;i++)birdGangs.push(newGang(false));
 }
 function stepBirds(dt){
@@ -889,13 +889,23 @@ function renderScene(){
       ctx.fillText(GL[f.g],f.x,f.y);
     }
   }else if(scene==='birds'){
+    ctx.globalAlpha=conversationMode?.58:.92;
     for(const g of birdGangs){
       for(const m of g.members){
         const flap=Math.sin(m.ph);
-        const gi=flap>0.55?G_BIRD_UP:flap>-0.2?G_BIRD_WING:G_BIRD_DOWN;
-        ctx.globalAlpha=conversationMode?.55:.9;
-        ctx.font=`400 ${Math.round(ch*1.05)}px ${FONT}`;
-        ctx.fillText(GL[gi],g.x+m.ox,g.y+m.oy);
+        // three cells per bird: left wing, body, right wing
+        const up=flap>.48, down=flap<-.25;
+        const wingL=G_BIRD_BACK; // always \, the wing shape must stay readable
+        const wingR=G_BIRD_WING; // always /
+        const bx=g.x+m.ox, by=g.y+m.oy;
+        const lift=up?-ch*.28:down?ch*.2:0;
+        const span=cw*1.55;
+        ctx.font=`400 ${Math.round(ch*1.5)}px ${FONT}`;
+        // one broad wing pair + a body, so each silhouette stays readable
+        ctx.fillText(GL[wingL],bx-span,by+lift);
+        ctx.fillText(GL[wingR],bx+span,by+lift);
+        ctx.font=`400 ${Math.round(ch*.72)}px ${FONT}`;
+        ctx.fillText(GL[G_BIRD_DOWN],bx,by+lift+ch*.55);
       }
     }
   }
