@@ -14,8 +14,7 @@ test("defaults match the dsh-quiet template", () => {
   assert.equal(DEFAULTS.conversationOpacity, 1);
   assert.equal(DEFAULTS.speed, 1);
   assert.equal(DEFAULTS.fishCount, 100);
-  assert.equal(DEFAULTS.fishColor, "#a9bde8");
-  assert.equal(DEFAULTS.whaleColor, "#c3c8d2");
+  assert.equal(DEFAULTS.accentColor, "#a9bde8");
   assert.equal(DEFAULTS.fishGlint, 1);
   assert.equal(DEFAULTS.whaleCount, 3);
   assert.equal(DEFAULTS.sidebarFish, 6);
@@ -24,12 +23,12 @@ test("defaults match the dsh-quiet template", () => {
   assert.equal(DEFAULTS.streamBlur, 10);
 });
 test("normalize clamps and fills", () => {
-  const n = normalize({ speed: 9, fishCount: 999, fishGlint: 9, whaleCount: 9, sidebarFish: 99, sidebarBlur: -1, streamBlur: 99, opacity: 2, fishColor: "#ABCDEF" });
+  const n = normalize({ speed: 9, fishCount: 999, fishGlint: 9, whaleCount: 9, sidebarFish: 99, sidebarBlur: -1, streamBlur: 99, opacity: 2, accentColor: "#ABCDEF" });
   assert.equal(n.speed, 2);
   assert.equal(n.fishCount, 200);
   assert.equal(n.fishGlint, 2);
   assert.equal(n.sidebarFish, 12);
-  assert.equal(n.fishColor, "#abcdef");
+  assert.equal(n.accentColor, "#abcdef");
   assert.equal(n.whaleCount, 3);
   assert.equal(n.sidebarBlur, 0);
   assert.equal(n.streamBlur, 20);
@@ -50,6 +49,6 @@ test("every control has label and hint", () => {
   for (const key of Object.keys(DEFAULTS)) { assert.equal(typeof LABELS[key], "string", key); assert.equal(typeof HINTS[key], "string", key); }
 });
 test("booleans and ranges cover grouped controls", () => {
-  const handled = new Set([...Object.keys(RANGES), ...BOOLEAN_KEYS, "fishColor", "whaleColor"]);
+  const handled = new Set([...Object.keys(RANGES), ...BOOLEAN_KEYS, "accentColor"]);
   for (const key of GROUPS.flatMap((g) => g.keys)) assert.equal(handled.has(key), true, key);
 });

@@ -5,8 +5,9 @@ const settings=Object.assign({},opts.settings||{});
 let swimSpeed=Number(settings.speed)||1;
 let fishCount=Math.round(Number(settings.fishCount))||100;
 let fishGlint=Number(settings.fishGlint);if(!Number.isFinite(fishGlint))fishGlint=1;
-let fishColor=String(settings.fishColor||"#a9bde8");
-let whaleColor=String(settings.whaleColor||"#c3c8d2");
+let accentColor=String(settings.accentColor||"#a9bde8");
+let fishColor=accentColor;
+let whaleColor=accentColor;
 let sidebarFish=Math.round(Number(settings.sidebarFish))||0;
 let whaleCount=Math.round(Number(settings.whaleCount))||3;
 let cellSize=Math.round(Number(settings.cellSize))||9;
@@ -398,7 +399,15 @@ const SPEC=[
   {name:'mackerel',cruise:32,max:60,min:16,weight:2,schoolSize:[5,9],spacing:[2.6,1.3],align:2,coh:.9,jitter:25,mill:0,vdrag:2},
   {name:'goby',cruise:26,max:56,min:10,weight:1,schoolSize:[8,12],spacing:[1.4,1.1],align:.35,coh:1.4,jitter:110,mill:0,vdrag:.3},
 ];
-const FISH_GLYPHS=['-','=','.','~','*'];
+/* Per-species look: glyph, relative font size and base alpha.
+   Bigger, sparser species read as mackerel/goby; small ones as sardine/anchovy. */
+const FISH_STYLE=[
+  {glyph:'\u00B7', scale:.82, alpha:.85},   // sardine
+  {glyph:'=',      scale:.92, alpha:.95},   // anchovy
+  {glyph:'.',      scale:.78, alpha:.8},    // silverside
+  {glyph:'~',      scale:1,   alpha:1},     // mackerel
+  {glyph:'*',      scale:.96, alpha:.98},   // goby
+];
 const TOTAL_WEIGHT=SPEC.reduce((n,s)=>n+s.weight,0);
 function pickSpecies(){let r=Math.random()*TOTAL_WEIGHT;for(let i=0;i<SPEC.length;i++){r-=SPEC[i].weight;if(r<=0)return i;}return 0;}
 let sepX=[],sepY=[],perc=60;
@@ -863,7 +872,7 @@ function shadeCreatures(){const tq=reduced?0:T;
     else if(f===F_FIN){g=FINS[(key>>>8)%FINS.length];a=A*(.6+.38*tone);}
     else if(f===F_RIDGE){g=RIDGE[(key>>>8)%RIDGE.length];a=A*.95;}
     else{g=G_O;a=A*1.08;}
-    cellG[i]=g;cellA[i]=a;blockA[i]=A*(.13+.13*tone);}}
+    cellG[i]=g;cellA[i]=a;blockA[i]=A*(.16+.17*tone);}}
 
 function render(){
   if(P.ink!==atlasInk)buildAtlas();
@@ -881,7 +890,12 @@ function render(){
   // faint cell blocks under the creatures' bodies (reads as one solid creature, like the reference)
   for(const b of bBuckets)b.length=0;
   for(let i=0;i<N;i++){if(!blockA[i]||inBand(i))continue;const a=blockA[i]*wMask[i];bBuckets[clamp(Math.round(a/BMAX*BB),1,BB-1)].push(i);}
-  ctx.fillStyle=ink;const ins=Math.max(1,Math.round(dpr));
+  if(whaleColor){
+    const n=parseInt(whaleColor.slice(1),16);
+    const r=Math.round(((n>>16)&255)*.55),g2=Math.round(((n>>8)&255)*.55),b2=Math.round((n&255)*.55);
+    ctx.fillStyle=`rgb(${r},${g2},${b2})`;
+  } else ctx.fillStyle=ink;
+  const ins=Math.max(1,Math.round(dpr));
   for(let b=1;b<BB;b++){const L=bBuckets[b];if(!L.length)continue;ctx.globalAlpha=b/BB*BMAX;
     for(const i of L){const c=i%cols,r=(i/cols)|0,x=Math.round(c*cx),y=Math.round(r*cy);ctx.fillRect(x+ins,y+ins,Math.round((c+1)*cx)-x-ins,Math.round((r+1)*cy)-y-ins);}}
   // counting sort glyph cells into alpha buckets, one globalAlpha per bucket
@@ -904,13 +918,23 @@ function render(){
   }
   // coloured fish pass: 100 fish × fillText is cheap compared with the cell field
   if(fishColored){
-    ctx.font=`400 ${Math.round(ch*.74)}px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=fishColor;
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=fishColor;
+    // three size buckets, so the 5 species differ without switching font per fish
+    const buckets=[[],[],[]];
     for(const f of fish){if(!f.alive||(reduced&&conversationMode))continue;const i=cellIdx(f.x,f.y);if(i<0||wFlag[i]||inBand(i))continue;
+      const st=FISH_STYLE[f.sp]||FISH_STYLE[0];
       const depthA=.55+.45*((f.depth||.8)-.55)/.45;
       const glint=Math.min(1,Math.abs(f.turn||0)/3.5);
-      const a=Math.min(.95,.28+.55*depthA+.22*glint*fishGlint+.15*f.alarm)*edgeFade(f.exitMode,f.x,f.y,55);
-      if(a<.02)continue;ctx.globalAlpha=a;
-      ctx.fillText(FISH_GLYPHS[f.sp]||'-',(i%cols)*cw+cw/2,((i/cols)|0)*ch+ch/2+1,Math.max(1,cw-1));}
+      const a=Math.min(.96,st.alpha*(.3+.6*depthA+.2*glint*fishGlint+.14*f.alarm))*edgeFade(f.exitMode,f.x,f.y,55);
+      if(a<.02)continue;
+      const bob=Math.sin((f.phase||0)*.5)*0.6;              // gentle vertical bob
+      buckets[st.scale<.86?0:st.scale<.95?1:2].push(i,f.x,f.y,a,st.glyph,bob);}
+    const sizes=[.8,.9,1];
+    for(let b=0;b<3;b++){const list=buckets[b];if(!list.length)continue;
+      ctx.font=`400 ${Math.round(ch*.74*sizes[b])}px ${FONT}`;
+      for(let k=0;k<list.length;k+=6){const i=list[k],y=list[k+2],a=list[k+3],g=list[k+4],bob=list[k+5];
+        ctx.globalAlpha=a;
+        ctx.fillText(g,(i%cols)*cw+cw/2,y+bob,Math.max(1,cw-1));}}
     ctx.globalAlpha=1;
   }
   // bubbles / spout glyphs (free-floating), same grey
@@ -943,8 +967,9 @@ const api={
     const cs=Math.max(6,Math.min(12,Math.round(Number(settings.cellSize)||9)));
     swimSpeed=clamp(Number(settings.speed)||1,.2,2);
     fishGlint=fg;
-    fishColor=String(settings.fishColor||"#a9bde8");
-    whaleColor=String(settings.whaleColor||"#c3c8d2");
+    accentColor=String(settings.accentColor||"#a9bde8");
+    fishColor=accentColor;
+    whaleColor=accentColor;
     whaleAtlasKey='';
     if(fc!==fishCount){fishCount=fc;seedFish();}
     if(sf!==sidebarFish){sidebarFish=sf;}
